@@ -89,14 +89,23 @@ Once triggered, follow this flow:
    - adapter and version
    - finding count
    - exact fields that would be uploaded
-4. Ask whether the user wants to upload
-5. Upload to ClawLockRank only if the user confirms
+4. Ask which public nickname the user wants to display
+   - use `Anonymous` if left blank
+5. Ask whether the user wants to upload
+6. Upload to ClawLockRank only if the user confirms
 
 Default entrypoint:
 
 ```bash
 python scripts/submit_score.py
 ```
+
+Recommended conversation order:
+
+1. tell the user that the leaderboard will publicly show a nickname
+2. ask for the nickname and allow a blank answer
+3. show the upload preview
+4. ask for the final upload confirmation
 
 It reads the default backend URL from `skill/config.json`, and also respects `CLAWLOCK_RANK_API_BASE`.
 

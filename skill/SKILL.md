@@ -90,14 +90,23 @@ python scripts/submit_score.py
    - 适配器与版本
    - 发现项数量
    - 将要公开上传的字段
-4. 询问用户是否上传
-5. 如果用户同意，再上传到 ClawLockRank
+4. 先询问用户想公开显示的昵称
+   - 留空时使用 `Anonymous`
+5. 再询问用户是否上传
+6. 如果用户同意，再上传到 ClawLockRank
 
 默认入口：
 
 ```bash
 python scripts/submit_score.py
 ```
+
+推荐对话顺序：
+
+1. 告诉用户排行榜会公开显示一个昵称
+2. 询问用户要展示的昵称，允许留空
+3. 展示上传预览
+4. 再做最终上传确认
 
 默认会读取 `skill/config.json` 中配置的排行榜后端地址，也支持通过 `CLAWLOCK_RANK_API_BASE` 覆盖。
 
