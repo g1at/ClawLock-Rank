@@ -1099,6 +1099,14 @@ body::after {
   letter-spacing: 0.03em;
 }
 
+.state-list-empty {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  min-height: 146px;
+}
+
 .spinner {
   width: 40px;
   height: 40px;
