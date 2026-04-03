@@ -1,27 +1,27 @@
 ---
 name: clawlock-rank
 description: >
-  ClawLockRank —— 基于 ClawLock 体检结果构建的排行榜上传技能。
+  基于 ClawLock 体检结果构建的排行榜上传技能。
   当用户明确想上传安全分、上报体检分数、同步排行榜成绩时触发：
   「上传安全分」「上传安全体检分数」「上传排行榜」「上报安全分」「提交体检成绩」
   「把体检结果传到排行榜」「同步安全分到 ClawLockRank」「upload score」「submit leaderboard score」
   Do NOT trigger for general security scans, normal Claw usage, debugging, or leaderboard browsing without upload intent.
+version: 0.1.0
 metadata:
-  clawlock_rank:
-    version: "0.1.0"
+  openclaw:
+    emoji: "📊"
     homepage: "https://github.com/g1at/ClawLock-Rank"
-    author: "g1at"
-    compatible_with: [openclaw, zeroclaw, generic-claw]
-    platforms: [linux, macos, windows, android-termux]
+    skillKey: "clawlock-rank"
+    os: [linux, macos, windows]
     requires:
-      python: ">=3.9"
-      pip_package: "clawlock"
       bins:
         - clawlock
         - python
-    note: >
-      默认排行榜后端地址内置在 skill/config.json。
-      整个流程以本地扫描为主，只有在用户明确确认后才会向排行榜后端上传最小化字段。
+      anyBins:
+        - python3
+        - python
+      config:
+        - config.json
 ---
 
 # ClawLockRank
@@ -53,7 +53,7 @@ python scripts/submit_score.py
 
 | 场景 | 上传内容 | 明确不会上传 |
 |------|----------|--------------|
-| 排行榜分数上传 | `tool`、`clawlock_version`、`adapter`、`adapter_version`、`device_fingerprint`、`score`、`grade`、`nickname`、`findings[].scanner`、`findings[].level`、`findings[].title`、`timestamp` | 原始配置文件、修复建议、文件路径/location、环境变量、完整原始报告、`scan_history.json` |
+| 排行榜分数上传 | `tool`、`clawlock_version`、`adapter`、`adapter_version`、`device_fingerprint`、`score`、`grade`、`nickname`、`findings[].scanner`、`findings[].level`、`findings[].title`、`timestamp` | 原始配置文件、修复建议、文件路径 / location、环境变量、完整原始报告、`scan_history.json` |
 
 设备指纹说明：
 
