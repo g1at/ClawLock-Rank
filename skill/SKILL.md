@@ -2,7 +2,8 @@
 
 [中文版本](./SKILL.zh-CN.md)
 
-Use this skill when the user wants to run a local ClawLock scan and optionally upload the result to the ClawLockRank leaderboard.
+Use this skill when the user wants to run a local ClawLock inspection and optionally upload the result to the ClawLockRank leaderboard.
+After the skill is imported, the intended experience is conversational: the user should be able to trigger it directly without manually copying terminal commands.
 
 ## Goal
 
@@ -25,11 +26,12 @@ Use this skill when the user wants to run a local ClawLock scan and optionally u
 Use the one-shot helper whenever possible:
 
 ```bash
-python scripts/submit_score.py --api-base "<worker-url>"
+python scripts/submit_score.py
 ```
 
 It runs the scan, trims the payload to the public allowlist, prompts for a nickname, previews the upload, and only then submits it.
-It also respects `CLAWLOCK_RANK_API_BASE`.
+It automatically reads the default Worker origin from `skill/config.json`, and also respects `CLAWLOCK_RANK_API_BASE`.
+When the user asks to run the leaderboard inspection, invoke this script directly instead of asking the user to type commands by hand.
 
 Advanced two-step mode:
 
@@ -53,7 +55,7 @@ python scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.j
 4. If the user agrees, upload the payload:
 
 ```bash
-python scripts/upload.py --input ./clawlock-rank-payload.json --api-base "<worker-url>" --nickname "<nickname>" --yes
+python scripts/upload.py --input ./clawlock-rank-payload.json --nickname "<nickname>" --yes
 ```
 
 If no nickname is provided, use `Anonymous`.

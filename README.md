@@ -28,6 +28,7 @@ flowchart LR
 |- skill/
 |  |- SKILL.md
 |  |- SKILL.zh-CN.md
+|  |- config.json
 |  `- scripts/
 |     |- run_scan.py
 |     |- upload.py
@@ -52,12 +53,6 @@ window.CLAWLOCK_RANK_CONFIG = {
 };
 ```
 
-Notes:
-
-- `enableSSE` is off by default because the starter Worker only supports polling.
-- The page already polls every 10 seconds.
-- The Pages workflow publishes only the static frontend files and `assets/`.
-
 ## Worker setup
 
 1. Install Worker dependencies:
@@ -72,7 +67,7 @@ npm install
 4. Apply `worker/schema.sql`.
 5. Update `worker/wrangler.toml`:
    - set `database_id`
-   - set `PUBLIC_ORIGIN` to your site origin, for example `https://g1at.github.io`
+   - set `PUBLIC_ORIGIN` to your site origin
 6. Set a real salt:
 
 ```bash
@@ -88,14 +83,37 @@ wrangler d1 execute clawlock-rank --file=./schema.sql
 wrangler deploy
 ```
 
-If `wrangler deploy` asks for a `workers.dev` subdomain, complete the onboarding in the Cloudflare dashboard first, then rerun the deploy command.
+## User flow
 
-## Local Worker development
+For regular users, the intended experience is:
+
+1. import the skill
+2. ask the assistant to run a ClawLock leaderboard inspection
+3. review the public upload preview
+4. confirm or cancel
+
+The default one-shot entrypoint is:
 
 ```bash
-cd worker
-npm run dev
+python skill/scripts/submit_score.py
 ```
+
+This command:
+
+- runs the scan locally
+- strips the payload down to the fields the leaderboard actually needs
+- shows the user a preview of the public upload data
+- uploads only after explicit confirmation
+- reads the default Worker origin from `skill/config.json`
+
+Advanced two-step workflow:
+
+```bash
+python skill/scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
+python skill/scripts/upload.py --input ./clawlock-rank-payload.json
+```
+
+You can also set `CLAWLOCK_RANK_API_BASE` to override the default Worker origin.
 
 ## Worker API
 
@@ -130,8 +148,6 @@ Accepts:
 }
 ```
 
-Returns the accepted score plus the current rank for the device.
-
 ### `GET /api/scores`
 
 Returns:
@@ -145,38 +161,6 @@ Returns:
   }
 }
 ```
-
-Aggregation rules:
-
-- leaderboard keeps the latest valid submission per device
-- ranking sorts by `score desc`, then newest submission
-- Top 5 vulnerabilities count unique devices from their latest submission
-
-## Skill usage
-
-This project does not depend on `~/.clawlock/scan_history.json`.
-
-Recommended one-shot workflow:
-
-```bash
-python skill/scripts/submit_score.py --api-base https://your-worker-domain.workers.dev
-```
-
-This command:
-
-- runs the scan locally
-- strips the payload down to the fields the leaderboard actually needs
-- shows the user a preview of the public upload data
-- uploads only after explicit confirmation
-
-Advanced two-step workflow:
-
-```bash
-python skill/scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
-python skill/scripts/upload.py --input ./clawlock-rank-payload.json --api-base https://your-worker-domain.workers.dev
-```
-
-You can also set `CLAWLOCK_RANK_API_BASE` to avoid repeating the Worker origin.
 
 ## Data handling
 

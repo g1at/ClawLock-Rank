@@ -3,6 +3,7 @@
 [English Version](./SKILL.md)
 
 当用户希望在本地运行 ClawLock 安全体检，并选择是否将结果上传到 ClawLockRank 排行榜时，使用本技能。
+导入 skill 后，目标体验应当是“用户直接通过对话触发”，而不是让用户自己去复制终端命令。
 
 ## 目标
 
@@ -18,13 +19,14 @@
 - 不使用 `~/.clawlock/scan_history.json`
 - 只以 `clawlock scan --format json` 作为扫描数据源
 - 只上传排行榜必需字段，不上传用户敏感信息
+- 原始设备指纹只允许发送给 Worker，并必须在服务端哈希后再存储
 
 ## 推荐工作流
 
 优先使用一键脚本：
 
 ```bash
-python scripts/submit_score.py --api-base "<worker-url>"
+python scripts/submit_score.py
 ```
 
 它会自动完成：
@@ -35,13 +37,14 @@ python scripts/submit_score.py --api-base "<worker-url>"
 - 展示将上传的数据摘要
 - 二次确认后再上传
 
-它也支持读取 `CLAWLOCK_RANK_API_BASE`。
+它会默认读取 `skill/config.json` 中内置的排行榜地址，也支持读取 `CLAWLOCK_RANK_API_BASE`。
+当用户说“开始体检并上传排行榜”之类的话时，应直接调用这个脚本，而不是让用户自己去终端输入命令。
 
 如果需要拆分流程，也可以使用两步模式：
 
 ```bash
 python scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
-python scripts/upload.py --input ./clawlock-rank-payload.json --api-base "<worker-url>"
+python scripts/upload.py --input ./clawlock-rank-payload.json
 ```
 
 ## 允许上传的字段

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -17,8 +16,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--api-base",
-        default=os.environ.get("CLAWLOCK_RANK_API_BASE", ""),
-        help="Worker origin, for example https://clawlock-rank.example.workers.dev",
+        default="",
+        help="Optional Worker origin override. Defaults to CLAWLOCK_RANK_API_BASE or skill/config.json.",
     )
     parser.add_argument("--nickname", default="", help="Optional public nickname override.")
     parser.add_argument("--yes", action="store_true", help="Skip the interactive confirmation prompt.")
@@ -79,9 +78,9 @@ def main() -> int:
             print(json.dumps({"ok": False, "accepted": False, "message": "Upload cancelled."}, indent=2))
             return 0
 
-    api_base = upload.normalize_api_base(args.api_base)
+    api_base = upload.resolve_api_base(args.api_base)
     if not api_base:
-        raise SystemExit("Missing Worker origin. Pass --api-base or set CLAWLOCK_RANK_API_BASE.")
+        raise SystemExit("Missing Worker origin. Pass --api-base, set CLAWLOCK_RANK_API_BASE, or add skill/config.json.")
 
     response = upload.post_payload(
         sanitized_payload,

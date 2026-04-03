@@ -32,6 +32,7 @@ flowchart LR
 |- skill/
 |  |- SKILL.md
 |  |- SKILL.zh-CN.md
+|  |- config.json
 |  `- scripts/
 |     |- run_scan.py
 |     |- upload.py
@@ -53,12 +54,6 @@ window.CLAWLOCK_RANK_CONFIG = {
   enableSSE: false
 };
 ```
-
-说明：
-
-- 默认使用 10 秒轮询
-- 当前 starter Worker 不提供 SSE 推送
-- GitHub Pages workflow 只发布静态前端与 `assets/`
 
 ## Worker 部署
 
@@ -90,12 +85,19 @@ wrangler d1 execute clawlock-rank --file=./schema.sql
 wrangler deploy
 ```
 
-## Skill 用法
+## 用户使用方式
 
-推荐直接使用一键脚本：
+对普通用户来说，目标体验应该是：
+
+1. 导入 skill
+2. 直接说“开始 ClawLock 排行榜体检”之类的话
+3. 查看即将公开上传的数据预览
+4. 选择确认或取消
+
+默认的一键入口是：
 
 ```bash
-python skill/scripts/submit_score.py --api-base https://your-worker-domain.workers.dev
+python skill/scripts/submit_score.py
 ```
 
 这个脚本会：
@@ -104,47 +106,16 @@ python skill/scripts/submit_score.py --api-base https://your-worker-domain.worke
 2. 只保留排行榜真正需要的字段
 3. 向用户展示将要上传的公开信息
 4. 明确确认后才上传
+5. 默认读取 `skill/config.json` 中内置的 Worker 地址
 
-高级两步模式也可保留：
+如果需要拆分流程，也可以使用两步模式：
 
 ```bash
 python skill/scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
-python skill/scripts/upload.py --input ./clawlock-rank-payload.json --api-base https://your-worker-domain.workers.dev
+python skill/scripts/upload.py --input ./clawlock-rank-payload.json
 ```
 
-也可以通过设置 `CLAWLOCK_RANK_API_BASE`，避免每次重复输入 Worker 域名。
-
-## 隐私与最小化上传
-
-当前脚本和 Worker 会把上传范围限制在以下字段：
-
-- `tool`
-- `clawlock_version`
-- `adapter`
-- `adapter_version`
-- `device_fingerprint`
-- `score`
-- `grade`
-- `nickname`
-- `findings[].scanner`
-- `findings[].level`
-- `findings[].title`
-- `timestamp`
-
-不会上传的内容包括：
-
-- 原始配置文件
-- 扫描详细修复建议
-- 本地文件路径 / location
-- 环境变量
-- `~/.clawlock/scan_history.json`
-- 完整原始扫描报告
-
-设备指纹说明：
-
-- 客户端只会把原始 `device_fingerprint` 发给 Worker
-- Worker 会在服务端用 salt 做哈希后再存库
-- 前端不会公开显示原始设备指纹
+也可以通过设置 `CLAWLOCK_RANK_API_BASE` 来覆盖默认 Worker 地址。
 
 ## Worker API
 
@@ -193,8 +164,34 @@ python skill/scripts/upload.py --input ./clawlock-rank-payload.json --api-base h
 }
 ```
 
-聚合规则：
+## 隐私与最小化上传
 
-- 排行榜只保留每台设备最近一次有效上传
-- 排名按 `score desc`，同分按最新提交
-- Top 5 漏洞按“最新设备快照中的独立设备数”统计
+当前脚本和 Worker 会把上传范围限制在以下字段：
+
+- `tool`
+- `clawlock_version`
+- `adapter`
+- `adapter_version`
+- `device_fingerprint`
+- `score`
+- `grade`
+- `nickname`
+- `findings[].scanner`
+- `findings[].level`
+- `findings[].title`
+- `timestamp`
+
+不会上传的内容包括：
+
+- 原始配置文件
+- 扫描详细修复建议
+- 本地文件路径 / location
+- 环境变量
+- `~/.clawlock/scan_history.json`
+- 完整原始扫描报告
+
+设备指纹说明：
+
+- 客户端只会把原始 `device_fingerprint` 发给 Worker
+- Worker 会在服务端用 salt 做哈希后再存库
+- 前端不会公开显示原始设备指纹
