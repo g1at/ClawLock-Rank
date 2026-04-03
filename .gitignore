@@ -8,6 +8,7 @@ preview*.png
 
 .wrangler/
 dist/
+worker/node_modules/
 worker/.dev.vars*
 worker/.env*
 

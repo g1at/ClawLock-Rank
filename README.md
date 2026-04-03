@@ -38,6 +38,7 @@ flowchart LR
 ## Frontend
 
 The static dashboard is already wired to call `GET /api/scores`.
+This repository also includes a GitHub Pages workflow at `.github/workflows/deploy-pages.yml`.
 
 Edit `config.js` before publishing:
 
@@ -52,6 +53,7 @@ Notes:
 
 - `enableSSE` is off by default because the starter Worker only supports polling.
 - The page already polls every 10 seconds.
+- The Pages workflow publishes only the static frontend files and `assets/`.
 
 ## Worker setup
 
