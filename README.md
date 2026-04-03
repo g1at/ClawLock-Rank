@@ -1,18 +1,19 @@
 # ClawLockRank
 
-ClawLockRank is a GitHub Pages leaderboard for ClawLock / OpenClaw security benchmark results, plus a lightweight Cloudflare Worker backend that accepts user submissions and aggregates vulnerability hotspots.
+[中文说明](./README.zh-CN.md)
+
+ClawLockRank is a GitHub Pages leaderboard for ClawLock / OpenClaw security benchmark results, with a lightweight Cloudflare Worker backend and a local upload skill.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  A["OpenClaw user"] --> B["skill/scripts/run_scan.py"]
+  A["OpenClaw user"] --> B["skill/scripts/submit_score.py"]
   B --> C["clawlock scan --format json"]
   C --> B
-  B --> D["skill/scripts/upload.py"]
-  D --> E["Cloudflare Worker"]
-  E --> F["Cloudflare D1"]
-  G["GitHub Pages UI"] --> E
+  B --> D["Cloudflare Worker"]
+  D --> E["Cloudflare D1"]
+  F["GitHub Pages UI"] --> D
 ```
 
 ## Repo layout
@@ -26,9 +27,11 @@ flowchart LR
 |- assets/
 |- skill/
 |  |- SKILL.md
+|  |- SKILL.zh-CN.md
 |  `- scripts/
 |     |- run_scan.py
-|     `- upload.py
+|     |- upload.py
+|     `- submit_score.py
 `- worker/
    |- schema.sql
    |- wrangler.toml
@@ -37,10 +40,10 @@ flowchart LR
 
 ## Frontend
 
-The static dashboard is already wired to call `GET /api/scores`.
+The static dashboard is wired to call `GET /api/scores`.
 This repository also includes a GitHub Pages workflow at `.github/workflows/deploy-pages.yml`.
 
-Edit `config.js` before publishing:
+Edit [config.js](./config.js) before publishing:
 
 ```js
 window.CLAWLOCK_RANK_CONFIG = {
@@ -107,23 +110,18 @@ Accepts:
     "clawlock_version": "1.3.0",
     "adapter": "OpenClaw",
     "adapter_version": "1.1.9",
-    "platform": "linux-x86_64",
     "device_fingerprint": "device-fingerprint-from-scan",
     "score": 95,
     "grade": "A",
     "nickname": "MiSec-Lab",
-    "domain_scores": {},
-    "domain_grades": {},
     "findings": [
       {
         "scanner": "config",
         "level": "critical",
-        "title": "Gateway auth disabled",
-        "location": "config:gatewayAuth"
+        "title": "Gateway auth disabled"
       }
     ],
-    "timestamp": "2026-04-03T12:00:00Z",
-    "evidence_hash": "sha256..."
+    "timestamp": "2026-04-03T12:00:00Z"
   },
   "meta": {
     "source": "clawlock-rank-skill",
@@ -158,26 +156,33 @@ Aggregation rules:
 
 This project does not depend on `~/.clawlock/scan_history.json`.
 
-Generate a normalized payload:
+Recommended one-shot workflow:
+
+```bash
+python skill/scripts/submit_score.py --api-base https://your-worker-domain.workers.dev
+```
+
+This command:
+
+- runs the scan locally
+- strips the payload down to the fields the leaderboard actually needs
+- shows the user a preview of the public upload data
+- uploads only after explicit confirmation
+
+Advanced two-step workflow:
 
 ```bash
 python skill/scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
+python skill/scripts/upload.py --input ./clawlock-rank-payload.json --api-base https://your-worker-domain.workers.dev
 ```
 
-Upload it:
-
-```bash
-python skill/scripts/upload.py --input ./clawlock-rank-payload.json --api-base https://your-worker-domain.workers.dev --nickname "Alice" --yes
-```
-
-The upload script also supports:
-
-- `CLAWLOCK_RANK_API_BASE`
-- interactive confirmation when `--yes` is omitted
+You can also set `CLAWLOCK_RANK_API_BASE` to avoid repeating the Worker origin.
 
 ## Data handling
 
 - The client sends the raw device fingerprint only to the Worker.
 - The Worker hashes the fingerprint with a server salt before storage.
+- The upload scripts whitelist only the fields needed for ranking and vulnerability aggregation.
 - The frontend only displays the nickname, derived avatar seed, score, and aggregated vulnerability stats.
+- Raw configs, remediation text, file paths, environment variables, and the full raw report are not uploaded.
 - `scan_history.json` is intentionally not used because it does not preserve the full findings list.

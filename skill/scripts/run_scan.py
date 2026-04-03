@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import platform as platform_lib
 import re
 import shutil
 import subprocess
@@ -19,7 +17,7 @@ VERSION_PATTERN = re.compile(r"\b\d+\.\d+\.\d+(?:[-+._][0-9A-Za-z.-]+)?\b")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run a local ClawLock scan and convert it into a ClawLockRank upload payload.",
+        description="Run a local ClawLock scan and convert it into a minimal ClawLockRank upload payload.",
     )
     parser.add_argument("--adapter", default="openclaw", help="Adapter passed to clawlock scan.")
     parser.add_argument("--output", required=True, help="Where to write the normalized payload JSON.")
@@ -41,11 +39,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    ensure_command_exists(args.clawlock_bin, "clawlock")
-
     output_path = Path(args.output).expanduser().resolve()
-    scan_report = run_scan(args)
-    payload = build_payload(scan_report, args)
+    payload = generate_payload(args)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -61,6 +56,12 @@ def main() -> int:
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
+
+
+def generate_payload(args: argparse.Namespace) -> dict[str, Any]:
+    ensure_command_exists(args.clawlock_bin, "clawlock")
+    scan_report = run_scan(args)
+    return build_payload(scan_report, args)
 
 
 def ensure_command_exists(command: str, label: str) -> None:
@@ -134,15 +135,8 @@ def build_payload(scan_report: dict[str, Any], args: argparse.Namespace) -> dict
     adapter = clean_text(scan_report.get("adapter"), 64) or clean_text(args.adapter, 64) or "openclaw"
     adapter_version = detect_adapter_version(args.adapter_bin or args.adapter)
     timestamp = normalize_timestamp(scan_report.get("time") or scan_report.get("timestamp"))
-    platform_name = normalize_platform()
     findings = normalize_findings(scan_report.get("findings"))
-    domain_scores = scan_report.get("domain_scores") if isinstance(scan_report.get("domain_scores"), dict) else {}
-    domain_grades = scan_report.get("domain_grades") if isinstance(scan_report.get("domain_grades"), dict) else {}
     grade = clean_text(scan_report.get("grade"), 2).upper() or infer_grade(score)
-
-    evidence_hash = hashlib.sha256(
-        json.dumps(scan_report, ensure_ascii=False, sort_keys=True).encode("utf-8"),
-    ).hexdigest()
 
     return {
         "submission": {
@@ -150,16 +144,12 @@ def build_payload(scan_report: dict[str, Any], args: argparse.Namespace) -> dict
             "clawlock_version": clawlock_version,
             "adapter": adapter,
             "adapter_version": adapter_version,
-            "platform": platform_name,
             "device_fingerprint": device_fingerprint,
             "score": score,
             "grade": grade,
             "nickname": "",
-            "domain_scores": domain_scores,
-            "domain_grades": domain_grades,
             "findings": findings,
             "timestamp": timestamp,
-            "evidence_hash": evidence_hash,
         },
         "meta": {
             "source": "clawlock-rank-skill",
@@ -178,7 +168,6 @@ def normalize_findings(raw_findings: Any) -> list[dict[str, str]]:
             continue
         scanner = clean_text(item.get("scanner"), 64)
         title = clean_text(item.get("title"), 160)
-        location = clean_text(item.get("location"), 160)
         level = clean_text(item.get("level"), 16).lower()
         if level == "warn":
             level = "medium"
@@ -193,7 +182,6 @@ def normalize_findings(raw_findings: Any) -> list[dict[str, str]]:
                 "scanner": scanner,
                 "level": level,
                 "title": title,
-                "location": location,
             }
         )
 
@@ -261,17 +249,6 @@ def parse_datetime(value: str) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=datetime.now().astimezone().tzinfo)
     return parsed
-
-
-def normalize_platform() -> str:
-    system = platform_lib.system().lower()
-    machine = platform_lib.machine().lower() or "unknown"
-    aliases = {
-        "windows": "windows",
-        "darwin": "macos",
-        "linux": "linux",
-    }
-    return f"{aliases.get(system, system)}-{machine}"
 
 
 def coerce_int(value: Any) -> int | None:

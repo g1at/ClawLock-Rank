@@ -12,7 +12,6 @@ interface NormalizedFinding {
   scanner: string;
   level: ThreatLevel;
   title: string;
-  location: string;
 }
 
 interface NormalizedSubmission {
@@ -20,18 +19,14 @@ interface NormalizedSubmission {
   clawlockVersion: string;
   adapter: string;
   adapterVersion: string;
-  platform: string;
   score: number;
   grade: string;
   nickname: string;
   deviceFingerprint: string;
   clientTimestamp: string;
-  domainScores: Record<string, unknown>;
-  domainGrades: Record<string, unknown>;
   findings: NormalizedFinding[];
   source: string;
   skillVersion: string;
-  evidenceHash: string;
 }
 
 const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
@@ -143,15 +138,15 @@ async function handleSubmit(request: Request, env: Env): Promise<Response> {
       submission.clawlockVersion,
       submission.adapter,
       submission.adapterVersion,
-      submission.platform,
+      "",
       submission.score,
       submission.grade,
-      JSON.stringify(submission.domainScores),
-      JSON.stringify(submission.domainGrades),
+      JSON.stringify({}),
+      JSON.stringify({}),
       submission.source,
       submission.skillVersion,
       ipHash,
-      submission.evidenceHash,
+      "",
     ),
     env.DB.prepare(
       `
@@ -179,7 +174,7 @@ async function handleSubmit(request: Request, env: Env): Promise<Response> {
         finding.scanner,
         finding.level,
         finding.title,
-        finding.location,
+        "",
       ),
     );
   }
@@ -324,7 +319,6 @@ function normalizeSubmission(raw: unknown): NormalizedSubmission {
   const clawlockVersion = cleanText(submission.clawlock_version ?? submission.version, 32);
   const adapter = cleanText(submission.adapter, 64);
   const adapterVersion = cleanText(submission.adapter_version, 32);
-  const platform = cleanText(submission.platform, 64);
   const deviceFingerprint = cleanText(
     submission.device_fingerprint ?? submission.device,
     128,
@@ -333,7 +327,6 @@ function normalizeSubmission(raw: unknown): NormalizedSubmission {
   const nickname = cleanText(submission.nickname, 24) || "Anonymous";
   const grade = cleanText(submission.grade, 2).toUpperCase();
   const score = Number(submission.score);
-  const evidenceHash = cleanText(submission.evidence_hash, 128);
 
   if (!clawlockVersion) throw new Error("submission.clawlock_version is required.");
   if (!adapter) throw new Error("submission.adapter is required.");
@@ -343,26 +336,20 @@ function normalizeSubmission(raw: unknown): NormalizedSubmission {
   if (!VALID_GRADES.has(grade)) throw new Error("submission.grade must be one of S/A/B/C/D/F.");
 
   const findings = normalizeFindings(submission.findings);
-  const domainScores = isRecord(submission.domain_scores) ? submission.domain_scores : {};
-  const domainGrades = isRecord(submission.domain_grades) ? submission.domain_grades : {};
 
   return {
     tool,
     clawlockVersion,
     adapter,
     adapterVersion,
-    platform,
     score: Math.round(score),
     grade,
     nickname,
     deviceFingerprint,
     clientTimestamp: new Date(timestamp).toISOString(),
-    domainScores,
-    domainGrades,
     findings,
     source: cleanText(meta.source, 64) || "clawlock-rank-skill",
     skillVersion: cleanText(meta.skill_version, 32) || "0.1.0",
-    evidenceHash,
   };
 }
 
@@ -377,7 +364,6 @@ function normalizeFindings(raw: unknown): NormalizedFinding[] {
       if (!isRecord(item)) return null;
       const scanner = cleanText(item.scanner, 64);
       const title = cleanText(item.title, 160);
-      const location = cleanText(item.location, 160);
       const rawLevel = cleanText(item.level, 16).toLowerCase();
       const level = rawLevel === "warn" ? "medium" : rawLevel === "low" ? "info" : rawLevel;
 
@@ -386,23 +372,19 @@ function normalizeFindings(raw: unknown): NormalizedFinding[] {
       }
 
       return {
-        findingKey: buildFindingKey(scanner, title, location),
+        findingKey: buildFindingKey(scanner, title),
         scanner,
         level: level as ThreatLevel,
         title,
-        location,
       };
     })
     .filter((item): item is NormalizedFinding => Boolean(item));
 }
 
-function buildFindingKey(scanner: string, title: string, location: string): string {
+function buildFindingKey(scanner: string, title: string): string {
   const cveMatch = title.match(/CVE-\d{4}-\d+/i);
   if (cveMatch) {
     return `cve:${cveMatch[0].toUpperCase()}`;
-  }
-  if (location) {
-    return `${scanner}:${slug(location) || unicodeFallback(location)}`;
   }
   return `${scanner}:${slug(title) || unicodeFallback(title)}`;
 }
