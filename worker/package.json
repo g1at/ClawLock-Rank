@@ -1,0 +1,16 @@
+{
+  "name": "clawlock-rank-worker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:apply": "wrangler d1 execute clawlock-rank --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260403.0",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.10.0"
+  }
+}

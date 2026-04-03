@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RankLaw — 面向安全的 Agent 跑分排行</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;800&family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app-root">
+    <div class="main-container">
+      <canvas id="wave-canvas"></canvas>
+
+      <nav class="navbar">
+        <a class="brand" href="https://www.xiaomiev.com/" target="_blank" rel="noopener" aria-label="Xiaomi EV">
+          <img class="brand-logo" src="./assets/xiaomi-logo.png" alt="Xiaomi">
+          <div class="brand-copy">
+            <span class="brand-name"><span class="brand-name-main">ClawLock</span><span class="brand-name-accent">Rank</span></span>
+          </div>
+        </a>
+
+        <div class="top-links" aria-label="官方入口">
+          <a class="top-link github-link" href="https://github.com/g1at/ClawLock" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
+            <span class="top-link-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.11.78-.25.78-.56 0-.28-.01-1.03-.02-2.01-3.2.69-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.69.08-.69 1.16.08 1.77 1.19 1.77 1.19 1.04 1.77 2.72 1.26 3.38.97.1-.75.41-1.26.74-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.14 1.18a10.9 10.9 0 0 1 5.72 0c2.18-1.49 3.14-1.18 3.14-1.18.62 1.59.23 2.76.11 3.05.74.8 1.18 1.82 1.18 3.08 0 4.42-2.7 5.39-5.27 5.68.42.36.79 1.08.79 2.18 0 1.58-.01 2.85-.01 3.24 0 .31.2.68.79.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+            </span>
+          </a>
+
+          <a class="top-link clawhub-link" href="https://clawhub.ai/g1at/clawlock" target="_blank" rel="noopener" aria-label="ClawHub" title="ClawHub">
+            <span class="top-link-icon" aria-hidden="true">
+              <img class="top-link-logo" src="./assets/clawhub-logo.png" alt="">
+            </span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="dashboard-content">
+        <section class="panel-left">
+          <header class="hero-header">
+            <div class="hero-copy">
+              <h1 class="hero-title">OpenClaw<br><span class="text-neon title-offset">安全跑分榜</span></h1>
+              <p class="hero-desc">实时展示 OpenClaw 安全体检分数与常见风险趋势。</p>
+            </div>
+          </header>
+
+          <div class="podium-container" id="podium">
+            <div class="state-container">
+              <div class="spinner"></div>
+              <div>加载冠军杯数据...</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-right">
+          <div class="panel-title">排行榜单</div>
+
+          <div class="list-shell">
+            <div class="list-container" id="rows">
+              <div class="state-container short">
+                <div>加载列表...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="threat-zone">
+            <div class="threat-header">
+              <div class="threat-title">安全漏洞 Top5</div>
+              <div class="threat-caption">汇总最近上传用户中最常见的高频安全问题。</div>
+            </div>
+            <div class="threat-list" id="threats">
+              <div class="state-container short">
+                <div>等待漏洞热点数据...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

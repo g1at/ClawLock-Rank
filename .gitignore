@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.chrome-profile*/
+preview*.png
+
+.wrangler/
+dist/
+worker/.dev.vars*
+worker/.env*
+
+clawlock-rank-payload.json
