@@ -2,7 +2,7 @@
 
 [English README](./README.md)
 
-ClawLockRank 是一个面向 ClawLock / OpenClaw 安全体检分数的排行榜项目。仓库同时包含：
+ClawLockRank 是一个基于 ClawLock 体检结果构建的排行榜项目。仓库同时包含：
 
 - GitHub Pages 大屏前端
 - Cloudflare Worker + D1 后端

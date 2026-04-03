@@ -2,7 +2,7 @@
 
 [中文说明](./README.zh-CN.md)
 
-ClawLockRank is a GitHub Pages leaderboard for ClawLock / OpenClaw security benchmark results, with a lightweight Cloudflare Worker backend and a local upload skill.
+ClawLockRank is a leaderboard project built from ClawLock inspection results, with a GitHub Pages frontend, a lightweight Cloudflare Worker backend, and a local upload skill.
 
 ## Architecture
 
