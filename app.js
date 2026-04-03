@@ -52,6 +52,15 @@ function avatarUrl(seed) {
   return "https://api.dicebear.com/7.x/bottts/svg?seed=" + encodeURIComponent(safeSeed) + "&backgroundColor=transparent&scale=85&translateY=5";
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function versionLabel(value) {
   if (!value) return "";
   const text = String(value).trim();
@@ -109,14 +118,14 @@ function renderThreats(threats) {
       <div class="threat-rank">TOP ${item.rank}</div>
       <div class="threat-signal">
         <span class="threat-dot"></span>
-        <span class="threat-label">${item.label}</span>
+        <span class="threat-label">${escapeHtml(item.label)}</span>
       </div>
-      <div class="threat-name">${item.name}</div>
+      <div class="threat-name">${escapeHtml(item.name)}</div>
       <div class="threat-meta">
         <div class="threat-impact">
-          <span class="threat-count">${item.count}</span>
+          <span class="threat-count">${escapeHtml(item.count)}</span>
         </div>
-        <span class="threat-level level-${item.level}">${item.chip}</span>
+        <span class="threat-level level-${item.level}">${escapeHtml(item.chip)}</span>
       </div>
     </article>
   `).join("");
@@ -165,15 +174,16 @@ function renderLeaderboard(entries) {
   podium.innerHTML = arrangedTop3.map((entry) => {
     const meta = rankInfo(entry);
     const name = entryName(entry);
+    const safeName = escapeHtml(name);
     return `
       <div class="podium-block ${meta.className}">
         <div class="pb-avatar-wrap">
           ${meta.crown ? `<div class="pb-crown">${meta.crown}</div>` : ""}
-          <img class="pb-avatar" src="${avatarUrl(entry.avatar_seed || name)}" alt="${name}" title="${name}">
+          <img class="pb-avatar" src="${avatarUrl(entry.avatar_seed || name)}" alt="${safeName}" title="${safeName}">
         </div>
         <div class="pb-pillar">
-          <div class="pb-name">${name}</div>
-          <div class="pb-score">${entry.score}</div>
+          <div class="pb-name">${safeName}</div>
+          <div class="pb-score">${escapeHtml(entry.score)}</div>
         </div>
       </div>
     `;
@@ -184,21 +194,25 @@ function renderLeaderboard(entries) {
     const version = versionLabel(entry.adapter_version || entry.version);
     const previousScore = lastScoreMap.get(name);
     const isUpdated = !isInitialRender && previousScore !== undefined && previousScore !== entry.score;
+    const safeName = escapeHtml(name);
+    const safeVersion = escapeHtml(version);
+    const safeScore = escapeHtml(entry.score);
+    const safeGrade = escapeHtml(entry.grade || "B");
     return `
-      <div class="list-row ${isUpdated ? "score-updated" : ""}" data-user="${name}">
-        <div class="lb-rank">${entry.rank}</div>
+      <div class="list-row ${isUpdated ? "score-updated" : ""}" data-user="${safeName}">
+        <div class="lb-rank">${escapeHtml(entry.rank)}</div>
         <div class="lb-userinfo">
-          <img class="lb-avatar" src="${avatarUrl(entry.avatar_seed || name)}" alt="${name}">
+          <img class="lb-avatar" src="${avatarUrl(entry.avatar_seed || name)}" alt="${safeName}">
           <div class="lb-meta">
-            <div class="lb-name">${name}</div>
+            <div class="lb-name">${safeName}</div>
             <div class="lb-subline">
-              ${version ? `<span class="version-tag">${version}</span>` : ""}
+              ${version ? `<span class="version-tag">${safeVersion}</span>` : ""}
             </div>
           </div>
         </div>
         <div class="lb-score-wrap">
-          <div class="lb-score ${isUpdated ? "score-updated" : ""}">${entry.score}</div>
-          <div class="lb-grade grade-${entry.grade || "B"}">等级 ${entry.grade || "B"}</div>
+          <div class="lb-score ${isUpdated ? "score-updated" : ""}">${safeScore}</div>
+          <div class="lb-grade grade-${entry.grade || "B"}">等级 ${safeGrade}</div>
         </div>
       </div>
     `;
@@ -214,9 +228,10 @@ function showError(message) {
   const podium = document.getElementById("podium");
   const rows = document.getElementById("rows");
   const threats = document.getElementById("threats");
+  const safeMessage = escapeHtml(message);
   if (podium) podium.innerHTML = '<div class="state-container"><div>⚠️ 无法加载数据</div></div>';
-  if (rows) rows.innerHTML = `<div class="state-container short"><div>⚠️ ${message}</div></div>`;
-  if (threats) threats.innerHTML = `<div class="state-container short"><div>⚠️ ${message}</div></div>`;
+  if (rows) rows.innerHTML = `<div class="state-container short"><div>⚠️ ${safeMessage}</div></div>`;
+  if (threats) threats.innerHTML = `<div class="state-container short"><div>⚠️ ${safeMessage}</div></div>`;
 }
 
 async function fetchLeaderboard() {

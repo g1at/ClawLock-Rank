@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 from urllib import error, request
@@ -79,7 +80,7 @@ def sanitize_payload(raw_payload: dict[str, Any], nickname_override: str = "") -
     if not isinstance(meta, dict):
         meta = {}
 
-    nickname = (nickname_override or str(submission.get("nickname") or "")).strip() or "Anonymous"
+    nickname = clean_text(nickname_override or submission.get("nickname"), 24) or "Anonymous"
     sanitized_submission = {
         "tool": clean_text(submission.get("tool"), 32) or "ClawLock",
         "clawlock_version": clean_text(submission.get("clawlock_version") or submission.get("version"), 32),
@@ -88,7 +89,7 @@ def sanitize_payload(raw_payload: dict[str, Any], nickname_override: str = "") -
         "device_fingerprint": clean_text(submission.get("device_fingerprint") or submission.get("device"), 128),
         "score": sanitize_score(submission.get("score")),
         "grade": sanitize_grade(submission.get("grade")),
-        "nickname": nickname[:24],
+        "nickname": nickname,
         "findings": sanitize_findings(submission.get("findings")),
         "timestamp": clean_text(submission.get("timestamp") or submission.get("time"), 64),
     }
@@ -234,7 +235,9 @@ def read_skill_api_base() -> str:
 def clean_text(value: Any, max_length: int) -> str:
     if not isinstance(value, str):
         return ""
-    return value.strip()[:max_length]
+    normalized = unicodedata.normalize("NFC", value)
+    collapsed = " ".join(normalized.strip().split())
+    return collapsed[:max_length]
 
 
 def try_parse_json(raw: str) -> dict[str, Any] | None:

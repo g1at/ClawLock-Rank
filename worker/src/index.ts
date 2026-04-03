@@ -467,7 +467,8 @@ function normalizeOrigin(value: string): string {
 
 function cleanText(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return "";
-  return value.trim().slice(0, maxLength);
+  const normalized = value.normalize("NFC").trim().replace(/\s+/gu, " ");
+  return Array.from(normalized).slice(0, maxLength).join("");
 }
 
 function clampNumber(value: string | null, min: number, max: number, fallback: number): number {
