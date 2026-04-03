@@ -1,4 +1,4 @@
 window.CLAWLOCK_RANK_CONFIG = {
-  apiBase: "",
+  apiBase: "https://clawlock-rank-worker.dyyxml.workers.dev",
   enableSSE: false
 };
