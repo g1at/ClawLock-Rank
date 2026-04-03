@@ -100,7 +100,7 @@ function renderThreats(threats) {
   const container = document.getElementById("threats");
   if (!container) return;
   if (!threats.length) {
-    container.innerHTML = '<div class="state-container short"><div>暂无漏洞热点数据</div></div>';
+    container.innerHTML = '<div class="state-container short state-card-empty"><div>安全热点正在汇聚中</div></div>';
     return;
   }
 
@@ -150,7 +150,7 @@ function renderLeaderboard(entries) {
 
   if (!entries.length) {
     podium.innerHTML = '<div class="state-container"><div style="font-size:3rem;margin-bottom:10px;opacity:.5">🏆</div><div>暂无跑分数据，快去执行加固！</div></div>';
-    rows.innerHTML = '<div class="state-container short"><div>没有更多数据了</div></div>';
+    rows.innerHTML = '<div class="state-container short state-card-empty"><div>更多成绩正在汇聚中</div></div>';
     return;
   }
 

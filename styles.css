@@ -732,6 +732,10 @@ html, body {
   overflow: hidden;
 }
 
+.threat-list > .state-container {
+  grid-column: 1 / -1;
+}
+
 .threat-card {
   position: relative;
   min-width: 0;
@@ -1018,6 +1022,20 @@ html, body {
 }
 
 .state-container.short { min-height: 120px; }
+
+.state-card-empty {
+  min-height: 146px;
+  border-radius: 18px;
+  border: 1px solid rgba(54, 214, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(10, 16, 23, 0.82), rgba(9, 14, 20, 0.56)),
+    radial-gradient(circle at 50% 0%, rgba(54, 214, 255, 0.05), transparent 56%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 12px 28px rgba(0, 0, 0, 0.2);
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
 
 .spinner {
   width: 40px;
