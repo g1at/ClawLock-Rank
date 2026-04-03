@@ -6,7 +6,7 @@ description: >
   「上传安全分」「上传安全体检分数」「上传排行榜」「上报安全分」「提交体检成绩」
   「把体检结果传到排行榜」「同步安全分到 ClawLockRank」「upload score」「submit leaderboard score」
   Do NOT trigger for general security scans, normal Claw usage, debugging, or leaderboard browsing without upload intent.
-version: 0.1.0
+version: 1.0.0
 metadata:
   openclaw:
     emoji: "📊"

@@ -154,7 +154,7 @@ python skill/scripts/upload.py --input ./clawlock-rank-payload.json
   },
   "meta": {
     "source": "clawlock-rank-skill",
-    "skill_version": "0.1.0"
+    "skill_version": "1.0.0"
   }
 }
 ```

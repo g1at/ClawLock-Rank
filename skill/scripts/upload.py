@@ -108,7 +108,7 @@ def sanitize_payload(raw_payload: dict[str, Any], nickname_override: str = "") -
         "submission": sanitized_submission,
         "meta": {
             "source": clean_text(meta.get("source"), 64) or "clawlock-rank-skill",
-            "skill_version": clean_text(meta.get("skill_version"), 32) or "0.1.0",
+            "skill_version": clean_text(meta.get("skill_version"), 32) or "1.0.0",
         },
     }
 

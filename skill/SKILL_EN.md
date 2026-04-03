@@ -5,7 +5,7 @@ description: >
   Trigger only when the user explicitly wants to upload a security score or submit an inspection result:
   "upload security score", "submit leaderboard score", "upload inspection result", "sync score to ClawLockRank".
   Do NOT trigger for general security scans, debugging, normal Claw usage, or leaderboard browsing without upload intent.
-version: 0.1.0
+version: 1.0.0
 metadata:
   openclaw:
     emoji: "📊"
