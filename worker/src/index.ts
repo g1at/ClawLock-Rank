@@ -2,6 +2,10 @@ interface Env {
   DB: D1Database;
   DEVICE_HASH_SALT: string;
   SUBMIT_COOLDOWN_HOURS?: string;
+  TIMESTAMP_MAX_AGE_MINUTES?: string;
+  TIMESTAMP_MAX_FUTURE_MINUTES?: string;
+  IP_RATE_LIMIT_WINDOW_MINUTES?: string;
+  IP_RATE_LIMIT_MAX_SUBMISSIONS?: string;
   PUBLIC_ORIGIN?: string;
 }
 
@@ -23,6 +27,7 @@ interface NormalizedSubmission {
   grade: string;
   nickname: string;
   deviceFingerprint: string;
+  evidenceHash: string;
   clientTimestamp: string;
   findings: NormalizedFinding[];
   source: string;
@@ -87,10 +92,16 @@ async function handleSubmit(request: Request, env: Env): Promise<Response> {
   }
 
   const submittedAt = new Date().toISOString();
-  const deviceHash = await hashWithSalt(submission.deviceFingerprint, env.DEVICE_HASH_SALT || "clawlock-rank");
+  const timestampError = validateTimestampFreshness(submission.clientTimestamp, env);
+  if (timestampError) {
+    return json({ ok: false, accepted: false, error: timestampError }, 400, request, env);
+  }
+
+  const salt = env.DEVICE_HASH_SALT || "clawlock-rank";
+  const deviceHash = await hashWithSalt(submission.deviceFingerprint, salt);
   const avatarSeed = deviceHash.slice(0, 12);
   const ipAddress = extractIp(request);
-  const ipHash = await hashWithSalt(ipAddress || "unknown-ip", env.DEVICE_HASH_SALT || "clawlock-rank");
+  const ipHash = ipAddress ? await hashWithSalt(ipAddress, salt) : "";
 
   const cooldownHours = Number(env.SUBMIT_COOLDOWN_HOURS || "24");
   const cooldownMs = Number.isFinite(cooldownHours) && cooldownHours > 0 ? cooldownHours * 60 * 60 * 1000 : 0;
@@ -114,6 +125,11 @@ async function handleSubmit(request: Request, env: Env): Promise<Response> {
         env,
       );
     }
+  }
+
+  const ipRateLimitError = await checkIpRateLimit(env, ipHash);
+  if (ipRateLimitError) {
+    return json({ ok: false, accepted: false, error: ipRateLimitError }, 429, request, env);
   }
 
   const submissionId = crypto.randomUUID();
@@ -146,7 +162,7 @@ async function handleSubmit(request: Request, env: Env): Promise<Response> {
       submission.source,
       submission.skillVersion,
       ipHash,
-      "",
+      submission.evidenceHash,
     ),
     env.DB.prepare(
       `
@@ -325,15 +341,20 @@ function normalizeSubmission(raw: unknown): NormalizedSubmission {
   );
   const timestamp = cleanText(submission.timestamp ?? submission.time, 64);
   const nickname = cleanText(submission.nickname, 24) || "Anonymous";
+  const evidenceHash = cleanHash(submission.evidence_hash);
   const grade = cleanText(submission.grade, 2).toUpperCase();
   const score = Number(submission.score);
 
   if (!clawlockVersion) throw new Error("submission.clawlock_version is required.");
   if (!adapter) throw new Error("submission.adapter is required.");
   if (!deviceFingerprint) throw new Error("submission.device_fingerprint is required.");
+  if (deviceFingerprint.length < 8) throw new Error("submission.device_fingerprint is too short.");
   if (!timestamp || Number.isNaN(Date.parse(timestamp))) throw new Error("submission.timestamp must be a valid ISO date.");
   if (!Number.isFinite(score) || score < 0 || score > 100) throw new Error("submission.score must be between 0 and 100.");
   if (!VALID_GRADES.has(grade)) throw new Error("submission.grade must be one of S/A/B/C/D/F.");
+  if (submission.evidence_hash != null && !evidenceHash) {
+    throw new Error("submission.evidence_hash must be a 64-character lowercase hex string.");
+  }
 
   const findings = normalizeFindings(submission.findings);
 
@@ -346,6 +367,7 @@ function normalizeSubmission(raw: unknown): NormalizedSubmission {
     grade,
     nickname,
     deviceFingerprint,
+    evidenceHash,
     clientTimestamp: new Date(timestamp).toISOString(),
     findings,
     source: cleanText(meta.source, 64) || "clawlock-rank-skill",
@@ -358,7 +380,7 @@ function normalizeFindings(raw: unknown): NormalizedFinding[] {
     return [];
   }
 
-  return raw
+  const deduped = raw
     .slice(0, 200)
     .map((item) => {
       if (!isRecord(item)) return null;
@@ -379,6 +401,15 @@ function normalizeFindings(raw: unknown): NormalizedFinding[] {
       };
     })
     .filter((item): item is NormalizedFinding => Boolean(item));
+
+  const seen = new Set<string>();
+  return deduped.filter((item) => {
+    if (seen.has(item.findingKey)) {
+      return false;
+    }
+    seen.add(item.findingKey);
+    return true;
+  });
 }
 
 function buildFindingKey(scanner: string, title: string): string {
@@ -423,6 +454,54 @@ async function getRankForDevice(env: Env, deviceHash: string): Promise<number | 
     .first<{ rank: number }>();
 
   return row?.rank ?? null;
+}
+
+async function checkIpRateLimit(env: Env, ipHash: string): Promise<string | null> {
+  if (!ipHash) {
+    return null;
+  }
+
+  const windowMinutes = readPositiveNumber(env.IP_RATE_LIMIT_WINDOW_MINUTES, 60);
+  const maxSubmissions = readPositiveNumber(env.IP_RATE_LIMIT_MAX_SUBMISSIONS, 30);
+  if (windowMinutes <= 0 || maxSubmissions <= 0) {
+    return null;
+  }
+
+  const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+  const recent = await env.DB.prepare(
+    `
+      SELECT COUNT(*) AS count
+      FROM submissions
+      WHERE ip_hash = ? AND submitted_at >= ?
+    `,
+  )
+    .bind(ipHash, windowStart)
+    .first<{ count: number | string }>();
+
+  const count = Number(recent?.count || 0);
+  if (Number.isFinite(count) && count >= maxSubmissions) {
+    return "This IP has uploaded too many scores recently. Please try again later.";
+  }
+  return null;
+}
+
+function validateTimestampFreshness(timestamp: string, env: Env): string | null {
+  const timestampMs = Date.parse(timestamp);
+  if (!Number.isFinite(timestampMs)) {
+    return "submission.timestamp must be a valid ISO date.";
+  }
+
+  const maxAgeMinutes = readPositiveNumber(env.TIMESTAMP_MAX_AGE_MINUTES, 720);
+  const maxFutureMinutes = readPositiveNumber(env.TIMESTAMP_MAX_FUTURE_MINUTES, 10);
+  const ageMs = Date.now() - timestampMs;
+
+  if (maxAgeMinutes > 0 && ageMs > maxAgeMinutes * 60 * 1000) {
+    return "submission.timestamp is too old. Please upload soon after the scan finishes.";
+  }
+  if (maxFutureMinutes > 0 && ageMs < -maxFutureMinutes * 60 * 1000) {
+    return "submission.timestamp is too far in the future.";
+  }
+  return null;
 }
 
 function json(body: unknown, status: number, request: Request, env: Env): Response {
@@ -471,10 +550,21 @@ function cleanText(value: unknown, maxLength: number): string {
   return Array.from(normalized).slice(0, maxLength).join("");
 }
 
+function cleanHash(value: unknown): string {
+  if (typeof value !== "string") return "";
+  const normalized = value.trim().toLowerCase();
+  return /^[0-9a-f]{64}$/u.test(normalized) ? normalized : "";
+}
+
 function clampNumber(value: string | null, min: number, max: number, fallback: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(min, Math.min(max, Math.floor(parsed)));
+}
+
+function readPositiveNumber(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function isRecord(value: unknown): value is Record<string, any> {

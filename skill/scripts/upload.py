@@ -43,7 +43,7 @@ def main() -> int:
     if not args.yes:
         print(json.dumps(build_public_summary(payload), ensure_ascii=False, indent=2))
         print(
-            "Only score, version, nickname, timestamp, device fingerprint, and finding titles/levels/scanners "
+            "Only score, version, nickname, timestamp, device fingerprint, evidence hash, and finding titles/levels/scanners "
             "will be uploaded. Raw configs, remediation details, file paths, and local reports stay on this device.",
         )
         confirm = input(f"Upload score {payload['submission']['score']} for {payload['submission']['nickname']}? [y/N]: ")
@@ -87,6 +87,7 @@ def sanitize_payload(raw_payload: dict[str, Any], nickname_override: str = "") -
         "adapter": clean_text(submission.get("adapter"), 64),
         "adapter_version": clean_text(submission.get("adapter_version"), 32),
         "device_fingerprint": clean_text(submission.get("device_fingerprint") or submission.get("device"), 128),
+        "evidence_hash": clean_hash(submission.get("evidence_hash")),
         "score": sanitize_score(submission.get("score")),
         "grade": sanitize_grade(submission.get("grade")),
         "nickname": nickname,
@@ -158,6 +159,7 @@ def build_public_summary(payload: dict[str, Any]) -> dict[str, Any]:
             "adapter",
             "adapter_version",
             "device_fingerprint",
+            "evidence_hash",
             "score",
             "grade",
             "nickname",
@@ -238,6 +240,15 @@ def clean_text(value: Any, max_length: int) -> str:
     normalized = unicodedata.normalize("NFC", value)
     collapsed = " ".join(normalized.strip().split())
     return collapsed[:max_length]
+
+
+def clean_hash(value: Any) -> str:
+    text = clean_text(value, 64).lower()
+    if not text:
+        return ""
+    if len(text) != 64 or any(char not in "0123456789abcdef" for char in text):
+        raise SystemExit("submission.evidence_hash must be a 64-character lowercase hex string.")
+    return text
 
 
 def try_parse_json(raw: str) -> dict[str, Any] | None:

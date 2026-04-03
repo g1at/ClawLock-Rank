@@ -68,6 +68,12 @@ npm install
 5. Update `worker/wrangler.toml`:
    - set `database_id`
    - set `PUBLIC_ORIGIN` to your site origin
+   - adjust the anti-abuse defaults if needed:
+     - `SUBMIT_COOLDOWN_HOURS`
+     - `TIMESTAMP_MAX_AGE_MINUTES`
+     - `TIMESTAMP_MAX_FUTURE_MINUTES`
+     - `IP_RATE_LIMIT_WINDOW_MINUTES`
+     - `IP_RATE_LIMIT_MAX_SUBMISSIONS`
 6. Set a real salt:
 
 ```bash
@@ -137,6 +143,7 @@ Accepts:
     "adapter": "OpenClaw",
     "adapter_version": "1.1.9",
     "device_fingerprint": "device-fingerprint-from-scan",
+    "evidence_hash": "sha256-of-the-canonical-local-scan-report",
     "score": 95,
     "grade": "A",
     "nickname": "MiSec-Lab",
@@ -174,7 +181,9 @@ Returns:
 
 - The client sends the raw device fingerprint only to the Worker.
 - The Worker hashes the fingerprint with a server salt before storage.
+- The upload scripts compute and send an `evidence_hash` derived from the local scan report, without uploading the full report itself.
 - The upload scripts whitelist only the fields needed for ranking and vulnerability aggregation.
 - The frontend only displays the nickname, derived avatar seed, score, and aggregated vulnerability stats.
 - Raw configs, remediation text, file paths, environment variables, and the full raw report are not uploaded.
 - `scan_history.json` is intentionally not used because it does not preserve the full findings list.
+- The Worker enforces a device cooldown, upload timestamp freshness, and a separate IP-based rate limit.

@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
 import subprocess
 import sys
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -145,6 +147,7 @@ def build_payload(scan_report: dict[str, Any], args: argparse.Namespace) -> dict
             "adapter": adapter,
             "adapter_version": adapter_version,
             "device_fingerprint": device_fingerprint,
+            "evidence_hash": build_evidence_hash(scan_report),
             "score": score,
             "grade": grade,
             "nickname": "",
@@ -186,6 +189,24 @@ def normalize_findings(raw_findings: Any) -> list[dict[str, str]]:
         )
 
     return findings
+
+
+def build_evidence_hash(scan_report: dict[str, Any]) -> str:
+    canonical = canonicalize_json_value(scan_report)
+    serialized = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def canonicalize_json_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): canonicalize_json_value(child) for key, child in sorted(value.items(), key=lambda item: str(item[0]))}
+    if isinstance(value, list):
+        return [canonicalize_json_value(item) for item in value]
+    if isinstance(value, str):
+        return unicodedata.normalize("NFC", value).strip()
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    return unicodedata.normalize("NFC", str(value)).strip()
 
 
 def detect_adapter_version(adapter_bin: str) -> str:

@@ -26,6 +26,12 @@ CREATE INDEX IF NOT EXISTS idx_submissions_device_time
 CREATE INDEX IF NOT EXISTS idx_submissions_score_time
   ON submissions (score DESC, submitted_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_submissions_ip_time
+  ON submissions (ip_hash, submitted_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_submissions_evidence_time
+  ON submissions (evidence_hash, submitted_at DESC);
+
 CREATE TABLE IF NOT EXISTS submission_findings (
   id TEXT PRIMARY KEY,
   submission_id TEXT NOT NULL,
