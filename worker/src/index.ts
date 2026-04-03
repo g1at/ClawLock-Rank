@@ -454,7 +454,7 @@ function json(body: unknown, status: number, request: Request, env: Env): Respon
 }
 
 function corsHeaders(request: Request, env: Env): HeadersInit {
-  const configuredOrigin = (env.PUBLIC_ORIGIN || "").trim();
+  const configuredOrigin = normalizeOrigin(env.PUBLIC_ORIGIN || "");
   const requestOrigin = request.headers.get("Origin");
   const allowOrigin = configuredOrigin
     ? requestOrigin === configuredOrigin
@@ -468,6 +468,19 @@ function corsHeaders(request: Request, env: Env): HeadersInit {
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
   };
+}
+
+function normalizeOrigin(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return trimmed.replace(/\/+$/, "");
+  }
 }
 
 function cleanText(value: unknown, maxLength: number): string {

@@ -69,7 +69,7 @@ npm install
 4. Apply `worker/schema.sql`.
 5. Update `worker/wrangler.toml`:
    - set `database_id`
-   - set `PUBLIC_ORIGIN`
+   - set `PUBLIC_ORIGIN` to your site origin, for example `https://g1at.github.io`
 6. Set a real salt:
 
 ```bash
@@ -84,6 +84,8 @@ cd worker
 wrangler d1 execute clawlock-rank --file=./schema.sql
 wrangler deploy
 ```
+
+If `wrangler deploy` asks for a `workers.dev` subdomain, complete the onboarding in the Cloudflare dashboard first, then rerun the deploy command.
 
 ## Local Worker development
 

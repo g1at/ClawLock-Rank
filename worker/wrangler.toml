@@ -4,9 +4,9 @@ compatibility_date = "2026-04-03"
 
 [vars]
 SUBMIT_COOLDOWN_HOURS = "24"
-PUBLIC_ORIGIN = "https://g1at.github.io/clawlock-rank"
+PUBLIC_ORIGIN = "https://g1at.github.io"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "clawlock-rank"
-database_id = "replace-with-your-d1-database-id"
+database_id = "1c348b5c-458b-418d-998a-9dcfa7e662fa"
