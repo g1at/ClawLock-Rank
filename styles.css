@@ -7,6 +7,7 @@
   --text-muted: #8b8e9b;
   --border-color: rgba(255, 255, 255, 0.05);
   --mi-orange: #ff6900;
+  --squircle-radius: 38%;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -114,7 +115,7 @@ body::after {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
+  border-radius: var(--squircle-radius);
   border: 1px solid rgba(255, 255, 255, 0.12);
   background:
     linear-gradient(180deg, rgba(255, 130, 36, 0.2), rgba(255, 105, 0, 0.12)),
@@ -178,7 +179,7 @@ body::after {
   width: 52px;
   height: 52px;
   padding: 0;
-  border-radius: 15px;
+  border-radius: var(--squircle-radius);
   text-decoration: none;
   color: var(--text-main);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -204,11 +205,12 @@ body::after {
 .top-link-icon {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--squircle-radius);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .github-link .top-link-icon {

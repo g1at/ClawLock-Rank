@@ -149,7 +149,7 @@ function renderLeaderboard(entries) {
   if (!podium || !rows) return;
 
   if (!entries.length) {
-    podium.innerHTML = '<div class="state-container"><div style="font-size:3rem;margin-bottom:10px;opacity:.5">🏆</div><div>还没有体检成绩，去做一次安全体检与加固吧</div></div>';
+    podium.innerHTML = '<div class="state-container"><div style="font-size:3rem;margin-bottom:10px;opacity:.5">🏆</div><div>暂无体检成绩，立即体检加固！</div></div>';
     rows.innerHTML = '<div class="state-container short state-card-empty"><div>更多成绩正在汇聚中</div></div>';
     return;
   }
