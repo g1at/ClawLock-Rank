@@ -10,6 +10,7 @@ preview*.png
 dist/
 worker/node_modules/
 worker/.dev.vars*
+!worker/.dev.vars.example
 worker/.env*
 
 clawlock-rank-payload.json
