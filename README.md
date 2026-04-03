@@ -27,7 +27,7 @@ flowchart LR
 |- assets/
 |- skill/
 |  |- SKILL.md
-|  |- SKILL.zh-CN.md
+|  |- SKILL_EN.md
 |  |- config.json
 |  `- scripts/
 |     |- run_scan.py
@@ -88,9 +88,16 @@ wrangler deploy
 For regular users, the intended experience is:
 
 1. import the skill
-2. ask the assistant to run a ClawLock leaderboard inspection
+2. ask the assistant to upload a security score or submit an inspection result
 3. review the public upload preview
 4. confirm or cancel
+
+Suggested trigger phrases:
+
+- `upload security score`
+- `submit leaderboard score`
+- `upload inspection result`
+- `sync score to ClawLockRank`
 
 The default one-shot entrypoint is:
 

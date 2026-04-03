@@ -31,7 +31,7 @@ flowchart LR
 |- assets/
 |- skill/
 |  |- SKILL.md
-|  |- SKILL.zh-CN.md
+|  |- SKILL_EN.md
 |  |- config.json
 |  `- scripts/
 |     |- run_scan.py
@@ -90,9 +90,17 @@ wrangler deploy
 对普通用户来说，目标体验应该是：
 
 1. 导入 skill
-2. 直接说“开始 ClawLock 排行榜体检”之类的话
+2. 直接说“上传安全分”“上传体检分数”“提交排行榜成绩”之类的话
 3. 查看即将公开上传的数据预览
 4. 选择确认或取消
+
+推荐触发词：
+
+- `上传安全分`
+- `上传安全体检分数`
+- `上传排行榜`
+- `上报安全分`
+- `提交体检成绩`
 
 默认的一键入口是：
 
