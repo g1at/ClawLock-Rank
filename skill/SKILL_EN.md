@@ -2,13 +2,12 @@
 name: clawlock-rank
 description: >
   A leaderboard upload skill built from ClawLock inspection results.
-  Trigger only when the user explicitly wants to upload a security score or submit an inspection result:
-  "upload security score", "submit leaderboard score", "upload inspection result", "sync score to ClawLockRank".
-  Do NOT trigger for general security scans, debugging, normal Claw usage, or leaderboard browsing without upload intent.
+  Trigger only when the user explicitly wants to upload a security score or submit an inspection result to ClawLockRank.
+  Do not trigger for general local inspections, normal Claw usage, debugging, or leaderboard browsing without upload intent.
 version: 1.0.0
 metadata:
   openclaw:
-    emoji: "📊"
+    emoji: "🦞"
     homepage: "https://github.com/g1at/ClawLock-Rank"
     skillKey: "clawlock-rank"
     os: [linux, macos, windows]
@@ -25,89 +24,85 @@ metadata:
 
 # ClawLockRank
 
-A leaderboard upload skill built from ClawLock inspection results. It is meant for the "run locally, then optionally upload the score" flow.
+A leaderboard upload skill built from ClawLock inspection results. It is intended for the “run locally, then optionally upload the result” workflow.
 
 [中文版本 → SKILL.md](SKILL.md)
 
----
+## Trigger boundary
 
-## Install and use
+Trigger this skill only when the user explicitly wants to upload a leaderboard result, for example:
 
-```bash
-python scripts/submit_score.py
-```
+- upload security score
+- upload inspection result
+- submit leaderboard score
+- sync my score to ClawLockRank
 
-As a Claw Skill, copy this file into the skills directory and then say:
+Do not trigger this skill when the user only wants to:
 
-- "upload security score"
-- "submit leaderboard score"
-- "upload this inspection result"
-- "sync my ClawLock score to ClawLockRank"
+- run a local security inspection
+- browse the leaderboard
+- use Claw normally
+- debug, develop, or install dependencies
 
----
+If the user only asks to start a security inspection, prefer the main ClawLock skill.
 
-## Privacy statement
+## Privacy and upload scope
 
-This skill runs `clawlock scan --format json` **locally first** and only uploads after explicit user confirmation.
+This skill runs `clawlock scan --format json` **locally first** and uploads only after explicit confirmation.
 
-| Scenario | Uploaded fields | Never uploaded |
-|----------|-----------------|----------------|
-| Leaderboard score upload | `tool`, `clawlock_version`, `adapter`, `adapter_version`, `device_fingerprint`, `score`, `grade`, `nickname`, `findings[].scanner`, `findings[].level`, `findings[].title`, `timestamp` | Raw configs, remediation text, file paths / location, environment variables, the full raw report, `scan_history.json` |
+The upload allowlist is limited to:
+
+- `tool`
+- `clawlock_version`
+- `adapter`
+- `adapter_version`
+- `device_fingerprint`
+- `evidence_hash`
+- `score`
+- `grade`
+- `nickname`
+- `findings[].scanner`
+- `findings[].level`
+- `findings[].title`
+- `timestamp`
+
+It does **not** upload:
+
+- raw configuration files
+- remediation text
+- local file paths / `location`
+- environment variables
+- the full raw scan report
+- `scan_history.json`
 
 Device fingerprint notes:
 
-- The raw `device_fingerprint` is sent only to the leaderboard Worker
-- The Worker hashes it server-side with a salt before storage
-- The frontend never shows the raw fingerprint publicly
+- the raw `device_fingerprint` is sent only to the leaderboard Worker
+- the Worker hashes it server-side with a salt before storage
+- the frontend never shows the raw fingerprint publicly
 
----
+## Recommended workflow
 
-## Trigger boundary
-
-Trigger only when the user explicitly wants to upload a leaderboard result:
-
-| User intent | Trigger? |
-|------------|----------|
-| Upload score / submit inspection result / sync leaderboard rank | Yes |
-| Run a local security inspection without upload intent | No |
-| View the leaderboard page | No |
-| General Claw debugging / coding / installation work | No |
-
-If the user only asks for a security inspection, prefer the main ClawLock skill. This upload skill should activate only when "upload", "leaderboard", or "submit score" intent is explicit.
-
----
-
-## Workflow
-
-Once triggered, follow this flow:
+Once triggered, follow this order:
 
 1. Run `clawlock scan --format json` locally
-2. Trim the result down to the minimal allowlisted payload
-3. Show the public preview:
+2. Trim the result down to the minimal upload payload
+3. Tell the user that the leaderboard will publicly show a nickname
+4. Ask which nickname to display; use `Anonymous` if blank
+5. Show the upload preview, including:
    - score
    - grade
    - adapter and version
    - finding count
    - exact fields that would be uploaded
-4. Ask which public nickname the user wants to display
-   - use `Anonymous` if left blank
-5. Ask whether the user wants to upload
-6. Upload to ClawLockRank only if the user confirms
+6. Ask whether the user wants to upload
+7. Upload to ClawLockRank only if the user confirms
 
 Default entrypoint:
 
 ```bash
 python scripts/submit_score.py
 ```
-
-Recommended conversation order:
-
-1. tell the user that the leaderboard will publicly show a nickname
-2. ask for the nickname and allow a blank answer
-3. show the upload preview
-4. ask for the final upload confirmation
-
-It reads the default backend URL from `skill/config.json`, and also respects `CLAWLOCK_RANK_API_BASE`.
 
 Advanced two-step mode:
 
@@ -116,21 +111,20 @@ python scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.j
 python scripts/upload.py --input ./clawlock-rank-payload.json
 ```
 
----
+It reads the default backend URL from `skill/config.json`, and also respects `CLAWLOCK_RANK_API_BASE`.
 
-## Start message
+## Server-side anti-abuse rules
 
-Before starting, print:
+The backend additionally enforces:
 
-```text
-📊 ClawLockRank is running a local inspection and preparing a leaderboard upload...
-```
-
----
+- a default 24-hour device cooldown
+- upload timestamp freshness checks
+- a separate IP-based rate limit
+- leaderboard and vulnerability stats based on the latest valid result per device
 
 ## Failure handling
 
 - If `clawlock` is not installed, tell the user to install ClawLock first
-- If the scan fails, show the command error clearly
-- If the user declines the upload, clearly state that the upload was cancelled and nothing was sent
+- If the scan fails, show the scan error clearly
+- If the user declines the upload, clearly state that nothing was sent
 - If the upload fails, show the Worker response clearly
