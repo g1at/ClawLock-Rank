@@ -99,14 +99,15 @@ def run_scan(args: argparse.Namespace) -> dict[str, Any]:
     except subprocess.TimeoutExpired as exc:
         raise SystemExit(f"clawlock scan timed out after {args.timeout} seconds.") from exc
 
+    document = extract_json_document(result.stdout) or extract_json_document(result.stderr)
+    if isinstance(document, dict):
+        return document
+
     if result.returncode != 0:
         message = result.stderr.strip() or result.stdout.strip() or f"exit code {result.returncode}"
         raise SystemExit(f"clawlock scan failed: {message}")
 
-    document = extract_json_document(result.stdout) or extract_json_document(result.stderr)
-    if not isinstance(document, dict):
-        raise SystemExit("Could not parse JSON output from `clawlock scan --format json`.")
-    return document
+    raise SystemExit("Could not parse JSON output from `clawlock scan --format json`.")
 
 
 def extract_json_document(text: str) -> dict[str, Any] | None:
