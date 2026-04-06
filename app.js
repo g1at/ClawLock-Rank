@@ -113,14 +113,19 @@ function renderThreats(threats) {
     return;
   }
 
-  container.innerHTML = threats.map((item) => `
-    <article class="threat-card level-${item.level}">
+  container.innerHTML = threats.map((item) => {
+    const name = String(item.name || "");
+    const lengthClass = name.length > 56 ? " is-xlong" : name.length > 36 ? " is-long" : "";
+    const safeName = escapeHtml(name);
+
+    return `
+    <article class="threat-card level-${item.level}${lengthClass}" title="${safeName}">
       <div class="threat-rank">TOP ${item.rank}</div>
       <div class="threat-signal">
         <span class="threat-dot"></span>
         <span class="threat-label">${escapeHtml(item.label)}</span>
       </div>
-      <div class="threat-name">${escapeHtml(item.name)}</div>
+      <div class="threat-name" title="${safeName}">${safeName}</div>
       <div class="threat-meta">
         <div class="threat-impact">
           <span class="threat-count">${escapeHtml(item.count)}</span>
@@ -128,7 +133,8 @@ function renderThreats(threats) {
         <span class="threat-level level-${item.level}">${escapeHtml(item.chip)}</span>
       </div>
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function fitPodiumNames() {
