@@ -5,10 +5,10 @@ description: >
   Trigger only when the user explicitly wants to upload a security score, submit an inspection result,
   or sync a score to ClawLockRank. Do not trigger for normal security checks, hardening, debugging,
   dependency setup, or browsing the leaderboard only.
-version: 1.0.0
+version: 1.1.0
 metadata:
   clawlock:
-    version: "1.0.0"
+    version: "1.1.0"
     homepage: "https://github.com/g1at/ClawLock-Rank"
     author: "g1at"
     compatible_with: [openclaw, zeroclaw, claude-code, generic-claw]

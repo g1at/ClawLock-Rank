@@ -4,10 +4,10 @@ description: >
   ClawLockRank — 基于 ClawLock 2.2.1+ 本地体检结果的排行榜上传技能。
   仅当用户明确要上传安全分、上传体检成绩、提交排行榜结果、同步分数到 ClawLockRank 时触发。
   不要在普通安全体检、安全加固、调试开发、安装依赖或仅浏览榜单时触发。
-version: 1.0.0
+version: 1.1.0
 metadata:
   clawlock:
-    version: "1.0.0"
+    version: "1.1.0"
     homepage: "https://github.com/g1at/ClawLock-Rank"
     author: "g1at"
     compatible_with: [openclaw, zeroclaw, claude-code, generic-claw]

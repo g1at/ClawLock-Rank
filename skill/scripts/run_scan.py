@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-SKILL_VERSION = "1.0.0"
+SKILL_VERSION = "1.1.0"
 VERSION_PATTERN = re.compile(r"\b\d+\.\d+\.\d+(?:[-+._][0-9A-Za-z.-]+)?\b")
 MIN_CLAWLOCK_VERSION = (2, 2, 1)
 

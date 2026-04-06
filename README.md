@@ -163,7 +163,7 @@ Accepts:
   },
   "meta": {
     "source": "clawlock-rank-skill",
-    "skill_version": "1.0.0"
+    "skill_version": "1.1.0"
   }
 }
 ```

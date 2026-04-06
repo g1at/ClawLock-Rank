@@ -12,7 +12,7 @@ from urllib import error, request
 
 ALLOWED_LEVELS = {"critical", "high", "medium", "info"}
 DEFAULT_SKILL_CONFIG = Path(__file__).resolve().parent.parent / "config.json"
-DEFAULT_USER_AGENT = "ClawLockRank-Skill/1.0 (+https://github.com/g1at/ClawLock-Rank)"
+DEFAULT_USER_AGENT = "ClawLockRank-Skill/1.1.0 (+https://github.com/g1at/ClawLock-Rank)"
 UPLOADED_FIELDS = [
     "tool",
     "clawlock_version",
@@ -132,7 +132,7 @@ def sanitize_payload(raw_payload: dict[str, Any], nickname_override: str = "") -
         "submission": sanitized_submission,
         "meta": {
             "source": clean_text(meta.get("source"), 64) or "clawlock-rank-skill",
-            "skill_version": clean_text(meta.get("skill_version"), 32) or "1.0.0",
+            "skill_version": clean_text(meta.get("skill_version"), 32) or "1.1.0",
         },
     }
 
