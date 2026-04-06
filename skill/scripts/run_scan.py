@@ -15,13 +15,18 @@ from typing import Any
 
 SKILL_VERSION = "1.0.0"
 VERSION_PATTERN = re.compile(r"\b\d+\.\d+\.\d+(?:[-+._][0-9A-Za-z.-]+)?\b")
+MIN_CLAWLOCK_VERSION = (2, 2, 1)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run a local ClawLock scan and convert it into a minimal ClawLockRank upload payload.",
     )
-    parser.add_argument("--adapter", default="openclaw", help="Adapter passed to clawlock scan.")
+    parser.add_argument(
+        "--adapter",
+        default="openclaw",
+        help="Adapter passed to clawlock scan. Defaults to openclaw for the current leaderboard scope.",
+    )
     parser.add_argument("--output", required=True, help="Where to write the normalized payload JSON.")
     parser.add_argument("--clawlock-bin", default="clawlock", help="Path to the clawlock executable.")
     parser.add_argument(
@@ -50,6 +55,7 @@ def main() -> int:
     summary = {
         "ok": True,
         "output": str(output_path),
+        "clawlock_version": payload["submission"]["clawlock_version"],
         "score": payload["submission"]["score"],
         "grade": payload["submission"]["grade"],
         "adapter": payload["submission"]["adapter"],
@@ -133,9 +139,12 @@ def build_payload(scan_report: dict[str, Any], args: argparse.Namespace) -> dict
     clawlock_version = clean_text(scan_report.get("version"), 32)
     if not clawlock_version:
         raise SystemExit("Scan output did not include a ClawLock version.")
+    ensure_supported_clawlock_version(clawlock_version)
 
     adapter = clean_text(scan_report.get("adapter"), 64) or clean_text(args.adapter, 64) or "openclaw"
-    adapter_version = detect_adapter_version(args.adapter_bin or args.adapter)
+    adapter_version = clean_text(scan_report.get("adapter_version"), 32) or detect_adapter_version(
+        args.adapter_bin or args.adapter or infer_adapter_bin(adapter)
+    )
     timestamp = normalize_timestamp(scan_report.get("time") or scan_report.get("timestamp"))
     findings = normalize_findings(scan_report.get("findings"))
     grade = clean_text(scan_report.get("grade"), 2).upper() or infer_grade(score)
@@ -196,6 +205,33 @@ def normalize_findings(raw_findings: Any) -> list[dict[str, str]]:
     return findings
 
 
+def ensure_supported_clawlock_version(version: str) -> None:
+    parsed = parse_version_tuple(version)
+    if parsed is None:
+        return
+    if parsed < MIN_CLAWLOCK_VERSION:
+        expected = ".".join(str(part) for part in MIN_CLAWLOCK_VERSION)
+        raise SystemExit(
+            f"ClawLockRank skill requires clawlock>={expected}. Current scan report version: {version}."
+        )
+
+
+def parse_version_tuple(version: str) -> tuple[int, int, int] | None:
+    match = VERSION_PATTERN.search(version)
+    if not match:
+        return None
+    raw = match.group(0)
+    numbers: list[int] = []
+    for part in re.split(r"[^0-9]+", raw):
+        if part:
+            numbers.append(int(part))
+        if len(numbers) == 3:
+            break
+    if len(numbers) < 3:
+        return None
+    return (numbers[0], numbers[1], numbers[2])
+
+
 def build_evidence_hash(scan_report: dict[str, Any]) -> str:
     canonical = canonicalize_json_value(scan_report)
     serialized = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -242,6 +278,17 @@ def detect_adapter_version(adapter_bin: str) -> str:
             return match.group(0)
 
     return ""
+
+
+def infer_adapter_bin(adapter: str) -> str:
+    normalized = adapter.strip().lower().replace("_", "-")
+    aliases = {
+        "openclaw": "openclaw",
+        "zeroclaw": "zeroclaw",
+        "claude-code": "claude",
+        "claude code": "claude",
+    }
+    return aliases.get(normalized, "")
 
 
 def normalize_timestamp(value: Any) -> str:

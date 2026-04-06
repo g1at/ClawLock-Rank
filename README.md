@@ -2,7 +2,7 @@
 
 [中文说明](./README.zh-CN.md)
 
-ClawLockRank is a leaderboard project built from ClawLock inspection results, with a GitHub Pages frontend, a lightweight Cloudflare Worker backend, and a local upload skill.
+ClawLockRank is a leaderboard project built from ClawLock inspection results. This repository contains the GitHub Pages dashboard, the Cloudflare Worker + D1 backend, and the local upload skill used after a user finishes a local ClawLock inspection.
 
 ## Architecture
 
@@ -13,7 +13,7 @@ flowchart LR
   C --> B
   B --> D["Cloudflare Worker"]
   D --> E["Cloudflare D1"]
-  F["GitHub Pages UI"] --> D
+  F["GitHub Pages dashboard"] --> D
 ```
 
 ## Repo layout
@@ -41,10 +41,10 @@ flowchart LR
 
 ## Frontend
 
-The static dashboard is wired to call `GET /api/scores`.
+The static dashboard calls `GET /api/scores`.
 This repository also includes a GitHub Pages workflow at `.github/workflows/deploy-pages.yml`.
 
-Edit [config.js](./config.js) before publishing:
+Before publishing, edit [config.js](./config.js):
 
 ```js
 window.CLAWLOCK_RANK_CONFIG = {
@@ -55,7 +55,7 @@ window.CLAWLOCK_RANK_CONFIG = {
 
 ## Worker setup
 
-1. Install Worker dependencies:
+1. Install dependencies:
 
 ```bash
 cd worker
@@ -64,11 +64,11 @@ npm install
 
 2. Create a D1 database.
 3. Copy `.dev.vars.example` to `.dev.vars` if you want to use `wrangler dev`.
-4. Apply `worker/schema.sql`.
-5. Update `worker/wrangler.toml`:
+4. Apply [worker/schema.sql](./worker/schema.sql).
+5. Update [worker/wrangler.toml](./worker/wrangler.toml):
    - set `database_id`
-   - set `PUBLIC_ORIGIN` to your site origin
-   - adjust the anti-abuse defaults if needed:
+   - set `PUBLIC_ORIGIN`
+   - tune the anti-abuse defaults if needed:
      - `SUBMIT_COOLDOWN_HOURS`
      - `TIMESTAMP_MAX_AGE_MINUTES`
      - `TIMESTAMP_MAX_FUTURE_MINUTES`
@@ -81,7 +81,7 @@ cd worker
 wrangler secret put DEVICE_HASH_SALT
 ```
 
-7. Deploy:
+7. Initialize the database and deploy:
 
 ```bash
 cd worker
@@ -89,14 +89,16 @@ wrangler d1 execute clawlock-rank --file=./schema.sql
 wrangler deploy
 ```
 
-## User flow
+## Skill usage
 
-For regular users, the intended experience is:
+The skill targets `clawlock>=2.2.1` and uses `clawlock scan --format json` as the only source of truth for upload payloads.
 
-1. import the skill
-2. ask the assistant to upload a security score or submit an inspection result
+Expected user flow:
+
+1. install or import the skill
+2. ask to upload a security score or submit an inspection result
 3. choose a public nickname
-4. review the public upload preview
+4. review the upload preview
 5. confirm or cancel
 
 Suggested trigger phrases:
@@ -106,7 +108,7 @@ Suggested trigger phrases:
 - `upload inspection result`
 - `sync score to ClawLockRank`
 
-The default one-shot entrypoint is:
+Default one-shot entrypoint:
 
 ```bash
 python skill/scripts/submit_score.py
@@ -114,29 +116,23 @@ python skill/scripts/submit_score.py
 
 This command:
 
-- runs the scan locally
-- strips the payload down to the fields the leaderboard actually needs
-- shows the user a preview of the public upload data
+- runs `clawlock scan --format json` locally
+- requires `clawlock>=2.2.1`
+- keeps only the fields the leaderboard needs
+- shows a preview before upload
 - uploads only after explicit confirmation
 - reads the default Worker origin from `skill/config.json`
 
-Advanced two-step workflow:
-
-```bash
-python skill/scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
-python skill/scripts/upload.py --input ./clawlock-rank-payload.json
-```
-
-You can also set `CLAWLOCK_RANK_API_BASE` to override the default Worker origin.
-
-For Claw / ClawHub integrations, the recommended machine-friendly flow is:
+Recommended Claw / ClawHub flow:
 
 ```bash
 python skill/scripts/submit_score.py --preview-only
 python skill/scripts/upload.py --input <payload_path> --nickname "<nickname>" --yes
 ```
 
-The preview command returns structured JSON, including a `payload_path` that should be reused for the confirmed upload.
+The preview step returns structured JSON, including a reusable `payload_path`. The assistant should ask for the nickname and confirmation in conversation before calling `upload.py`.
+
+You can also override the Worker origin with `CLAWLOCK_RANK_API_BASE`.
 
 ## Worker API
 
@@ -148,7 +144,7 @@ Accepts:
 {
   "submission": {
     "tool": "ClawLock",
-    "clawlock_version": "1.3.0",
+    "clawlock_version": "2.2.1",
     "adapter": "OpenClaw",
     "adapter_version": "1.1.9",
     "device_fingerprint": "device-fingerprint-from-scan",
@@ -188,11 +184,34 @@ Returns:
 
 ## Data handling
 
-- The client sends the raw device fingerprint only to the Worker.
-- The Worker hashes the fingerprint with a server salt before storage.
-- The upload scripts compute and send an `evidence_hash` derived from the local scan report, without uploading the full report itself.
-- The upload scripts whitelist only the fields needed for ranking and vulnerability aggregation.
-- The frontend only displays the nickname, derived avatar seed, score, and aggregated vulnerability stats.
-- Raw configs, remediation text, file paths, environment variables, and the full raw report are not uploaded.
-- `scan_history.json` is intentionally not used because it does not preserve the full findings list.
-- The Worker enforces a device cooldown, upload timestamp freshness, and a separate IP-based rate limit.
+Only these fields are allowed to leave the device:
+
+- `tool`
+- `clawlock_version`
+- `adapter`
+- `adapter_version`
+- `device_fingerprint`
+- `evidence_hash`
+- `score`
+- `grade`
+- `nickname`
+- `findings[].scanner`
+- `findings[].level`
+- `findings[].title`
+- `timestamp`
+
+Never uploaded:
+
+- raw config files
+- remediation text
+- local file paths / `location`
+- environment variables
+- `~/.clawlock/scan_history.json`
+- the full raw scan report
+
+Additional backend protections:
+
+- per-device cooldown
+- timestamp freshness checks
+- IP-based rate limiting
+- leaderboard and vulnerability hotspot aggregation based on the latest valid result per device

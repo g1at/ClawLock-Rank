@@ -2,11 +2,7 @@
 
 [English README](./README.md)
 
-ClawLockRank 是一个基于 ClawLock 体检结果构建的排行榜项目，仓库同时包含：
-
-- GitHub Pages 大屏前端
-- Cloudflare Worker + D1 后端
-- 用于本地扫描并自愿上传成绩的 skill 脚本
+ClawLockRank 是一个基于 ClawLock 体检结果构建的排行榜项目。这个仓库同时包含 GitHub Pages 大屏前端、Cloudflare Worker + D1 后端，以及用户在本地完成体检后自愿上传成绩的 skill。
 
 ## 架构
 
@@ -45,7 +41,7 @@ flowchart LR
 
 ## 前端
 
-静态页面请求 `GET /api/scores` 获取排行榜数据。仓库内已包含 GitHub Pages 工作流 `.github/workflows/deploy-pages.yml`。
+静态大屏通过 `GET /api/scores` 获取排行榜数据，仓库中也已经包含 GitHub Pages 工作流 `.github/workflows/deploy-pages.yml`。
 
 发布前请修改 [config.js](./config.js)：
 
@@ -58,17 +54,17 @@ window.CLAWLOCK_RANK_CONFIG = {
 
 ## Worker 部署
 
-1. 安装依赖
+1. 安装依赖：
 
 ```bash
 cd worker
 npm install
 ```
 
-2. 创建 D1 数据库
-3. 如需本地 `wrangler dev`，复制 `.dev.vars.example` 为 `.dev.vars`
-4. 执行 [worker/schema.sql](./worker/schema.sql)
-5. 更新 [worker/wrangler.toml](./worker/wrangler.toml)
+2. 创建 D1 数据库。
+3. 如果要使用本地 `wrangler dev`，把 `.dev.vars.example` 复制成 `.dev.vars`。
+4. 执行 [worker/schema.sql](./worker/schema.sql)。
+5. 修改 [worker/wrangler.toml](./worker/wrangler.toml)：
    - 设置 `database_id`
    - 设置 `PUBLIC_ORIGIN`
    - 如有需要，调整防刷参数：
@@ -77,14 +73,14 @@ npm install
      - `TIMESTAMP_MAX_FUTURE_MINUTES`
      - `IP_RATE_LIMIT_WINDOW_MINUTES`
      - `IP_RATE_LIMIT_MAX_SUBMISSIONS`
-6. 设置真实 salt
+6. 设置真实 salt：
 
 ```bash
 cd worker
 wrangler secret put DEVICE_HASH_SALT
 ```
 
-7. 初始化数据库并部署
+7. 初始化数据库并部署：
 
 ```bash
 cd worker
@@ -92,12 +88,14 @@ wrangler d1 execute clawlock-rank --file=./schema.sql
 wrangler deploy
 ```
 
-## 用户使用方式
+## Skill 使用方式
 
-对普通用户来说，目标体验是：
+当前 skill 面向 `clawlock>=2.2.1`，并且只以 `clawlock scan --format json` 作为上传数据的唯一事实来源。
 
-1. 导入 skill
-2. 在对话中表达“上传安全分”“上传体检成绩”“提交排行榜结果”这类意图
+推荐用户流程：
+
+1. 导入或安装 skill
+2. 在对话中表达“上传安全分”“提交排行榜结果”之类的意图
 3. 输入想公开展示的昵称
 4. 查看上传预览
 5. 确认或取消
@@ -118,41 +116,35 @@ python skill/scripts/submit_score.py
 
 这个脚本会：
 
-1. 本地执行 `clawlock scan --format json`
-2. 仅保留排行榜真正需要的字段
-3. 展示将要公开上传的数据预览
-4. 只有在明确确认后才上传
-5. 默认读取 `skill/config.json` 中配置的 Worker 地址
+- 本地执行 `clawlock scan --format json`
+- 要求 `clawlock>=2.2.1`
+- 只保留排行榜真正需要的字段
+- 先展示上传预览，再等待确认
+- 只有在明确同意后才上传
+- 默认读取 `skill/config.json` 里的 Worker 地址
 
-高级两步模式：
-
-```bash
-python skill/scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
-python skill/scripts/upload.py --input ./clawlock-rank-payload.json
-```
-
-也可以通过 `CLAWLOCK_RANK_API_BASE` 覆盖默认 Worker 地址。
-
-对于 Claw / ClawHub 集成，推荐使用更适合模型调用的两步方式：
+对于 Claw / ClawHub 集成，更推荐使用两步式流程：
 
 ```bash
 python skill/scripts/submit_score.py --preview-only
 python skill/scripts/upload.py --input <payload_path> --nickname "<nickname>" --yes
 ```
 
-预览命令会返回结构化 JSON，其中的 `payload_path` 应被后续确认上传阶段复用。
+预览命令会返回结构化 JSON，其中的 `payload_path` 应在确认上传阶段复用。模型应先在对话里问昵称、展示预览、拿到明确确认，再调用 `upload.py`。
+
+如果需要，也可以通过 `CLAWLOCK_RANK_API_BASE` 覆盖默认 Worker 地址。
 
 ## Worker API
 
 ### `POST /api/submit`
 
-接收精简后的 payload：
+接收：
 
 ```json
 {
   "submission": {
     "tool": "ClawLock",
-    "clawlock_version": "1.3.0",
+    "clawlock_version": "2.2.1",
     "adapter": "OpenClaw",
     "adapter_version": "1.1.9",
     "device_fingerprint": "device-fingerprint-from-scan",
@@ -192,7 +184,7 @@ python skill/scripts/upload.py --input <payload_path> --nickname "<nickname>" --
 
 ## 隐私与最小化上传
 
-当前脚本与 Worker 只允许上传以下字段：
+当前只允许这些字段离开本地设备：
 
 - `tool`
 - `clawlock_version`
@@ -211,24 +203,15 @@ python skill/scripts/upload.py --input <payload_path> --nickname "<nickname>" --
 明确不会上传：
 
 - 原始配置文件
-- 修复建议 / remediation 文本
-- 本地文件路径 / `location`
+- remediation / 修复建议文本
+- 本地文件路径或 `location`
 - 环境变量
 - `~/.clawlock/scan_history.json`
 - 完整原始扫描报告
 
-设备指纹说明：
+后端还会额外执行：
 
-- 客户端只会把原始 `device_fingerprint` 发给 Worker
-- Worker 会在服务端使用 salt 哈希后再入库
-- 前端不会公开展示原始设备指纹
-
-## 防刷与可信度
-
-当前后端会执行以下限制：
-
-- 同一设备默认 `24` 小时冷却
-- 只接受最近一段时间内生成的扫描结果
-- 同一 IP 有单独的频率限制
-- 排行榜与漏洞热点都按设备最新一次有效结果计算
-- skill 会基于本地扫描报告生成 `evidence_hash`，但不会上传完整报告
+- 按设备冷却
+- 时间戳新鲜度校验
+- IP 频率限制
+- 榜单和安全漏洞热点只按设备最新一条有效结果统计

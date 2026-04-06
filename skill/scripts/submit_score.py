@@ -14,7 +14,7 @@ import upload
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run a local ClawLock scan, preview the safe upload payload, and optionally submit it.",
+        description="Run a local ClawLock 2.2.1+ scan, preview the safe upload payload, and optionally submit it.",
     )
     parser.add_argument(
         "--api-base",
@@ -134,6 +134,7 @@ def build_preview_result(payload: dict[str, Any], payload_path: Path | None) -> 
         "mode": "preview",
         "payload_path": str(payload_path) if payload_path else "",
         "summary": summary,
+        "source_of_truth": "clawlock scan --format json",
         "requires_public_nickname": True,
         "requires_explicit_confirmation": True,
         "next_step": (

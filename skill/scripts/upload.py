@@ -170,6 +170,8 @@ def sanitize_findings(raw_findings: Any) -> list[dict[str, str]]:
 def build_public_summary(payload: dict[str, Any]) -> dict[str, Any]:
     submission = payload["submission"]
     return {
+        "tool": submission["tool"],
+        "clawlock_version": submission["clawlock_version"],
         "score": submission["score"],
         "grade": submission["grade"],
         "adapter": submission["adapter"],
