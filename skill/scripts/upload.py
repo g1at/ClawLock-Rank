@@ -12,6 +12,7 @@ from urllib import error, request
 
 ALLOWED_LEVELS = {"critical", "high", "medium", "info"}
 DEFAULT_SKILL_CONFIG = Path(__file__).resolve().parent.parent / "config.json"
+DEFAULT_USER_AGENT = "ClawLockRank-Skill/1.0 (+https://github.com/g1at/ClawLock-Rank)"
 UPLOADED_FIELDS = [
     "tool",
     "clawlock_version",
@@ -189,7 +190,11 @@ def post_payload(payload: dict[str, Any], api_base: str, timeout: int) -> dict[s
     http_request = request.Request(
         endpoint,
         data=body,
-        headers={"Content-Type": "application/json; charset=utf-8"},
+        headers={
+            "Content-Type": "application/json; charset=utf-8",
+            "Accept": "application/json",
+            "User-Agent": DEFAULT_USER_AGENT,
+        },
         method="POST",
     )
 
