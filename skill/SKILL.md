@@ -84,32 +84,37 @@ metadata:
 
 ## 推荐流程
 
-触发后按以下顺序执行：
+在 Claw / ClawHub 场景中，应把脚本当作“后台执行器”，由模型负责和用户对话，不要依赖脚本自己去提示用户。
 
-1. 本地运行 `clawlock scan --format json`
-2. 将扫描结果裁剪为最小上传 payload
-3. 告知用户排行榜会公开展示一个昵称
-4. 询问用户想展示的昵称，留空则使用 `Anonymous`
-5. 展示上传预览，包括：
+推荐按以下顺序执行：
+
+1. 先运行预览命令：
+
+```bash
+python scripts/submit_score.py --preview-only
+```
+
+2. 读取预览 JSON，向用户说明：
    - 分数
    - 等级
    - 适配器与版本
    - 发现项数量
    - 即将上传的字段清单
-6. 询问用户是否确认上传
-7. 只有在用户明确同意后才上传到 ClawLockRank
+3. 告知用户排行榜会公开展示一个昵称，并询问想展示的昵称
+   - 留空则使用 `Anonymous`
+4. 再询问用户是否确认上传
+5. 只有在用户明确同意后，才运行上传命令：
 
-默认入口：
+```bash
+python scripts/upload.py --input <payload_path> --nickname "<nickname>" --yes
+```
+
+其中 `<payload_path>` 使用预览结果中的 `payload_path`。
+
+如果是终端手动使用，仍可直接运行：
 
 ```bash
 python scripts/submit_score.py
-```
-
-高级两步模式：
-
-```bash
-python scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
-python scripts/upload.py --input ./clawlock-rank-payload.json
 ```
 
 默认会读取 `skill/config.json` 中配置的后端地址，也支持通过 `CLAWLOCK_RANK_API_BASE` 覆盖。

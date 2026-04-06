@@ -12,6 +12,29 @@ from urllib import error, request
 
 ALLOWED_LEVELS = {"critical", "high", "medium", "info"}
 DEFAULT_SKILL_CONFIG = Path(__file__).resolve().parent.parent / "config.json"
+UPLOADED_FIELDS = [
+    "tool",
+    "clawlock_version",
+    "adapter",
+    "adapter_version",
+    "device_fingerprint",
+    "evidence_hash",
+    "score",
+    "grade",
+    "nickname",
+    "findings[].scanner",
+    "findings[].level",
+    "findings[].title",
+    "timestamp",
+]
+EXCLUDED_FIELDS = [
+    "raw configuration files",
+    "remediation text",
+    "local file paths / location",
+    "environment variables",
+    "full raw scan report",
+    "scan_history.json",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -153,21 +176,8 @@ def build_public_summary(payload: dict[str, Any]) -> dict[str, Any]:
         "adapter_version": submission["adapter_version"],
         "nickname": submission["nickname"],
         "finding_count": len(submission["findings"]),
-        "uploaded_fields": [
-            "tool",
-            "clawlock_version",
-            "adapter",
-            "adapter_version",
-            "device_fingerprint",
-            "evidence_hash",
-            "score",
-            "grade",
-            "nickname",
-            "findings[].scanner",
-            "findings[].level",
-            "findings[].title",
-            "timestamp",
-        ],
+        "uploaded_fields": UPLOADED_FIELDS,
+        "excluded_fields": EXCLUDED_FIELDS,
     }
 
 

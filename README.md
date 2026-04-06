@@ -129,6 +129,15 @@ python skill/scripts/upload.py --input ./clawlock-rank-payload.json
 
 You can also set `CLAWLOCK_RANK_API_BASE` to override the default Worker origin.
 
+For Claw / ClawHub integrations, the recommended machine-friendly flow is:
+
+```bash
+python skill/scripts/submit_score.py --preview-only
+python skill/scripts/upload.py --input <payload_path> --nickname "<nickname>" --yes
+```
+
+The preview command returns structured JSON, including a `payload_path` that should be reused for the confirmed upload.
+
 ## Worker API
 
 ### `POST /api/submit`

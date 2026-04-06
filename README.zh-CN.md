@@ -133,6 +133,15 @@ python skill/scripts/upload.py --input ./clawlock-rank-payload.json
 
 也可以通过 `CLAWLOCK_RANK_API_BASE` 覆盖默认 Worker 地址。
 
+对于 Claw / ClawHub 集成，推荐使用更适合模型调用的两步方式：
+
+```bash
+python skill/scripts/submit_score.py --preview-only
+python skill/scripts/upload.py --input <payload_path> --nickname "<nickname>" --yes
+```
+
+预览命令会返回结构化 JSON，其中的 `payload_path` 应被后续确认上传阶段复用。
+
 ## Worker API
 
 ### `POST /api/submit`

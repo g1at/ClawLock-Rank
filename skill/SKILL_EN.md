@@ -83,32 +83,37 @@ Device fingerprint notes:
 
 ## Recommended workflow
 
-Once triggered, follow this order:
+In Claw / ClawHub usage, treat the scripts as backend executors and let the model handle the conversation. Do not rely on the scripts themselves to ask the user questions.
 
-1. Run `clawlock scan --format json` locally
-2. Trim the result down to the minimal upload payload
-3. Tell the user that the leaderboard will publicly show a nickname
-4. Ask which nickname to display; use `Anonymous` if blank
-5. Show the upload preview, including:
+Recommended order:
+
+1. Run the preview command first:
+
+```bash
+python scripts/submit_score.py --preview-only
+```
+
+2. Read the preview JSON and explain to the user:
    - score
    - grade
    - adapter and version
    - finding count
    - exact fields that would be uploaded
-6. Ask whether the user wants to upload
-7. Upload to ClawLockRank only if the user confirms
+3. Tell the user that the leaderboard will publicly show a nickname, then ask which nickname to display
+   - use `Anonymous` if blank
+4. Ask whether the user wants to upload
+5. Upload only after explicit confirmation:
 
-Default entrypoint:
+```bash
+python scripts/upload.py --input <payload_path> --nickname "<nickname>" --yes
+```
+
+Use the `payload_path` returned by the preview step.
+
+For direct terminal usage, this one-shot entrypoint still works:
 
 ```bash
 python scripts/submit_score.py
-```
-
-Advanced two-step mode:
-
-```bash
-python scripts/run_scan.py --adapter openclaw --output ./clawlock-rank-payload.json
-python scripts/upload.py --input ./clawlock-rank-payload.json
 ```
 
 It reads the default backend URL from `skill/config.json`, and also respects `CLAWLOCK_RANK_API_BASE`.

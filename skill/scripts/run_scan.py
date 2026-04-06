@@ -163,6 +163,7 @@ def build_payload(scan_report: dict[str, Any], args: argparse.Namespace) -> dict
 
 def normalize_findings(raw_findings: Any) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
     if not isinstance(raw_findings, list):
         return findings
 
@@ -180,6 +181,10 @@ def normalize_findings(raw_findings: Any) -> list[dict[str, str]]:
             continue
         if not scanner or not title:
             continue
+        finding_key = (scanner, level, title)
+        if finding_key in seen:
+            continue
+        seen.add(finding_key)
         findings.append(
             {
                 "scanner": scanner,
@@ -297,7 +302,9 @@ def infer_grade(score: int) -> str:
 def clean_text(value: Any, max_length: int) -> str:
     if not isinstance(value, str):
         return ""
-    return value.strip()[:max_length]
+    normalized = unicodedata.normalize("NFC", value)
+    collapsed = " ".join(normalized.strip().split())
+    return collapsed[:max_length]
 
 
 def resolve_command(command: str) -> str | None:
