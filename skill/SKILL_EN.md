@@ -151,7 +151,7 @@ python scripts/submit_score.py
 ## Server-side restrictions
 
 The leaderboard backend also enforces:
-- a default `24` hour device cooldown
+- a default `4` hour device cooldown
 - timestamp freshness checks
 - a separate IP-based rate limit
 - leaderboard and vulnerability hotspot aggregation based on the latest valid result per device

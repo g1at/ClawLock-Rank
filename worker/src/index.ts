@@ -103,7 +103,7 @@ async function handleSubmit(request: Request, env: Env): Promise<Response> {
   const ipAddress = extractIp(request);
   const ipHash = ipAddress ? await hashWithSalt(ipAddress, salt) : "";
 
-  const cooldownHours = Number(env.SUBMIT_COOLDOWN_HOURS || "24");
+  const cooldownHours = Number(env.SUBMIT_COOLDOWN_HOURS || "4");
   const cooldownMs = Number.isFinite(cooldownHours) && cooldownHours > 0 ? cooldownHours * 60 * 60 * 1000 : 0;
   const lastSubmit = await env.DB.prepare("SELECT last_submit_at FROM rate_limits WHERE device_hash = ?")
     .bind(deviceHash)
