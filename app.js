@@ -93,6 +93,7 @@ function normalizeThreats(data) {
         weight: levelMeta.weight
       };
     })
+    .filter((item) => item.level !== "info")
     .sort((left, right) => (right.count - left.count) || (right.weight - left.weight) || (left.originalRank - right.originalRank))
     .slice(0, 5)
     .map((item, index) => ({

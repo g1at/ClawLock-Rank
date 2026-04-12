@@ -293,6 +293,7 @@ async function handleScores(request: Request, env: Env): Promise<Response> {
         level,
         COUNT(*) AS count
       FROM dedup
+      WHERE level IN ('critical', 'high', 'medium')
       GROUP BY finding_key, title, level
       ORDER BY
         count DESC,
